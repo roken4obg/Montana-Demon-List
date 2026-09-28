@@ -996,7 +996,7 @@
         pendingSubmissions.push(submission);
       } catch (error) {
         console.error(error);
-        alert("Could not save the submission online.");
+        alert(`Could not save the submission online.\n\n${error?.message || "Unknown Supabase error"}\n\nMake sure the submissions table has a user_id column and the RLS policy allows logged-in users to insert their own records.`);
         return;
       }
 
