@@ -445,11 +445,14 @@
     let currentUserIsAdmin = false;
 
     async function supabaseRequest(table, options = {}) {
+      // Use the signed-in user's access token when available so Supabase RLS
+      // sees the request as authenticated (required for profiles/admin_users).
+      const accessToken = currentSession?.access_token || SUPABASE_KEY;
       const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
         ...options,
         headers: {
           apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
+          Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
           ...(options.headers || {})
         }
@@ -627,9 +630,16 @@
       document.getElementById('accountUsername').textContent = currentProfile.username || 'Account';
       document.getElementById('submitAccountName').textContent = currentProfile.username || session.user.email;
       try {
-        const admins = await supabaseRequest(`admin_users?user_id=eq.${encodeURIComponent(session.user.id)}&select=user_id`, { headers: { Prefer: 'return=representation' } });
-        currentUserIsAdmin = Array.isArray(admins) && admins.length > 0;
+        // Query the admin role through the authenticated Supabase session.
+        const { data: adminRows, error: adminError } = await supabaseClient
+          .from('admin_users')
+          .select('user_id')
+          .eq('user_id', session.user.id)
+          .limit(1);
+        if (adminError) throw adminError;
+        currentUserIsAdmin = Array.isArray(adminRows) && adminRows.some(row => row.user_id === session.user.id);
       } catch (e) {
+        console.error('Admin role check failed:', e);
         currentUserIsAdmin = false;
       }
       adminBtn.classList.toggle('hidden', !currentUserIsAdmin);
