@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -399,6 +399,112 @@
       91: 31.73, 92: 31.29, 93: 30.87, 94: 30.45, 95: 30.05, 96: 29.66, 97: 29.28, 98: 28.91, 99: 28.55, 100: 28.19
     };
 
+    // --- SUPABASE PERSISTENCE ---
+    // Public project URL + publishable key. Database writes are controlled by Supabase RLS policies.
+    const SUPABASE_URL = "https://vdnuyhjtvwwbfijwexmf.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_0MfSfbq1aoT97r-aA_KuCQ_d48k6Aaw";
+
+    async function supabaseRequest(table, options = {}) {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+        ...options,
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          ...(options.headers || {})
+        }
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`${table}: ${response.status} ${errorText}`);
+      }
+      const text = await response.text();
+      return text ? JSON.parse(text) : null;
+    }
+
+    async function loadRemoteData() {
+      try {
+        const [remoteLevels, remotePacks, remoteSubmissions] = await Promise.all([
+          supabaseRequest("levels", { headers: { Prefer: "return=representation" } }),
+          supabaseRequest("packs", { headers: { Prefer: "return=representation" } }),
+          supabaseRequest("submissions", { headers: { Prefer: "return=representation" } })
+        ]);
+
+        if (Array.isArray(remoteLevels) && remoteLevels.length) {
+          levels = remoteLevels.sort((a, b) => a.rank - b.rank).map(row => ({
+            id: row.id, name: row.name, creator: row.creator, song: row.song || "",
+            length: row.length || "Medium", video: row.video || "", img: row.img || "",
+            victors: Array.isArray(row.victors) ? row.victors : []
+          }));
+        } else {
+          await saveAllLevels();
+        }
+
+        if (Array.isArray(remotePacks) && remotePacks.length) {
+          packs = remotePacks.map(row => ({ id: row.id, name: row.name, bonus: Number(row.bonus) || 0, levelIds: Array.isArray(row.level_ids) ? row.level_ids : [] }));
+        } else {
+          await saveAllPacks();
+        }
+
+        if (Array.isArray(remoteSubmissions) && remoteSubmissions.length) {
+          pendingSubmissions = remoteSubmissions.map(row => ({
+            id: row.id, player: row.player, levelId: row.level_id, proof: row.proof,
+            fps: row.fps, modMenu: row.mod_menu || "None", modNotes: row.mod_notes || ""
+          }));
+        } else if (pendingSubmissions.length) {
+          await saveAllSubmissions();
+        }
+
+        refreshAllPublicViews();
+      } catch (error) {
+        console.error("Supabase load failed:", error);
+        alert("The online database could not be loaded. Check that the Supabase tables and policies were created.");
+      }
+    }
+
+    async function saveAllLevels() {
+      const rows = levels.map((lvl, index) => ({
+        id: lvl.id, rank: index + 1, name: lvl.name, creator: lvl.creator, song: lvl.song || "",
+        length: lvl.length || "Medium", video: lvl.video || "", img: lvl.img || "",
+        victors: lvl.victors || []
+      }));
+      await supabaseRequest("levels", {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify(rows)
+      });
+      const validIds = rows.map(r => r.id);
+      if (validIds.length) {
+        await supabaseRequest(`levels?id=not.in.(${validIds.join(",")})`, { method: "DELETE" });
+      }
+    }
+
+    async function saveAllPacks() {
+      if (packs.length) {
+        const rows = packs.map(p => ({ id: p.id, name: p.name, bonus: p.bonus, level_ids: p.levelIds || [] }));
+        await supabaseRequest("packs", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(rows) });
+      }
+    }
+
+    async function saveAllSubmissions() {
+      if (pendingSubmissions.length) {
+        const rows = pendingSubmissions.map(s => ({ id: s.id, player: s.player, level_id: s.levelId, proof: s.proof, fps: String(s.fps || ""), mod_menu: s.modMenu || "None", mod_notes: s.modNotes || "" }));
+        await supabaseRequest("submissions", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(rows) });
+      }
+    }
+
+    function refreshAllPublicViews() {
+      renderLevels();
+      renderLegacyLevels();
+      renderLeaderboard();
+      renderPacks();
+      populateSubmitOptions();
+      renderAdminLevels();
+      renderAdminPacks();
+      renderPendingSubmissions();
+      resetAdminForm();
+    }
+
     // --- INITIAL STATE ---
     let levels = [
       { id: 1, name: "Acheron", creator: "Riot & More", song: "Thermodynamix", length: "XL", video: "https://youtube.com", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&q=80", victors: [{ player: "Trick", video: "https://youtube.com" }, { player: "Zoink", video: "https://youtube.com" }] },
@@ -417,7 +523,7 @@
     let currentEditingLevelId = null;
 
     // --- INITIALIZATION ---
-    window.onload = function() {
+    window.onload = async function() {
       renderLevels();
       renderLegacyLevels();
       renderLeaderboard();
@@ -425,6 +531,7 @@
       populateSubmitOptions();
       resetAdminForm();
       updateAdminButton();
+      await loadRemoteData();
     };
 
     // --- UI NAVIGATION & THEMES ---
@@ -632,7 +739,7 @@
       }
     }
 
-    function submitRecord() {
+    async function submitRecord() {
       const player = document.getElementById('subPlayer').value.trim();
       const levelId = parseInt(document.getElementById('subLevel').value);
       const proof = document.getElementById('subProof').value.trim();
@@ -650,15 +757,19 @@
         return;
       }
 
-      pendingSubmissions.push({
-        id: Date.now(),
-        player,
-        levelId,
-        proof,
-        fps,
-        modMenu,
-        modNotes
-      });
+      const submission = { id: Date.now(), player, levelId, proof, fps, modMenu, modNotes };
+      try {
+        await supabaseRequest("submissions", {
+          method: "POST",
+          headers: { Prefer: "return=minimal" },
+          body: JSON.stringify({ id: submission.id, player, level_id: levelId, proof, fps: String(fps || ""), mod_menu: modMenu, mod_notes: modNotes })
+        });
+        pendingSubmissions.push(submission);
+      } catch (error) {
+        console.error(error);
+        alert("Could not save the submission online.");
+        return;
+      }
 
       alert("Record submitted for admin review!");
       document.getElementById('subPlayer').value = "";
@@ -771,21 +882,21 @@
       populateSubmitOptions();
     }
 
-    function moveLevelUp(index) {
+    async function moveLevelUp(index) {
       if (index <= 0) return;
       [levels[index - 1], levels[index]] = [levels[index], levels[index - 1]];
-      refreshAfterLevelChange();
+      try { await saveAllLevels(); refreshAfterLevelChange(); } catch (error) { console.error(error); alert("Could not save the new ranking online."); }
     }
 
-    function moveLevelDown(index) {
+    async function moveLevelDown(index) {
       if (index >= levels.length - 1) return;
       [levels[index], levels[index + 1]] = [levels[index + 1], levels[index]];
-      refreshAfterLevelChange();
+      try { await saveAllLevels(); refreshAfterLevelChange(); } catch (error) { console.error(error); alert("Could not save the new ranking online."); }
     }
 
-    function deleteLevelAdmin(id) {
+    async function deleteLevelAdmin(id) {
       levels = levels.filter(l => l.id !== id);
-      refreshAfterLevelChange();
+      try { await saveAllLevels(); refreshAfterLevelChange(); } catch (error) { console.error(error); alert("Could not delete the level online."); }
     }
 
     function editLevelAdmin(id) {
@@ -817,7 +928,7 @@
       document.getElementById('admImg').value = "";
     }
 
-    function saveLevelAdmin() {
+    async function saveLevelAdmin() {
       const name = document.getElementById('admLevelName').value.trim();
       const creator = document.getElementById('admCreator').value.trim();
       const song = document.getElementById('admSong').value.trim();
@@ -850,8 +961,14 @@
         levels.splice(targetIndex, 0, newLvl);
       }
 
-      resetAdminForm();
-      refreshAfterLevelChange();
+      try {
+        await saveAllLevels();
+        resetAdminForm();
+        refreshAfterLevelChange();
+      } catch (error) {
+        console.error(error);
+        alert("Could not save this level online. Check your Supabase table/policies.");
+      }
     }
 
     // --- ADMIN PACK MANAGEMENT ---
@@ -897,7 +1014,7 @@
       });
     }
 
-    function createPackAdmin() {
+    async function createPackAdmin() {
       const name = document.getElementById('admPackName').value.trim();
       const bonus = parseFloat(document.getElementById('admPackBonus').value) || 0;
       const levelIds = [...document.querySelectorAll('.adm-pack-level:checked')]
@@ -913,17 +1030,30 @@
         return;
       }
 
-      packs.push({ id: Date.now(), name, bonus, levelIds });
-      document.getElementById('admPackName').value = "";
-      document.getElementById('admPackBonus').value = "50";
-      renderAdminPacks();
-      renderPacks();
+      const pack = { id: Date.now(), name, bonus, levelIds };
+      try {
+        await supabaseRequest("packs", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ id: pack.id, name, bonus, level_ids: levelIds }) });
+        packs.push(pack);
+        document.getElementById('admPackName').value = "";
+        document.getElementById('admPackBonus').value = "50";
+        renderAdminPacks();
+        renderPacks();
+      } catch (error) {
+        console.error(error);
+        alert("Could not save the pack online.");
+      }
     }
 
-    function deletePackAdmin(id) {
-      packs = packs.filter(p => p.id !== id);
-      renderAdminPacks();
-      renderPacks();
+    async function deletePackAdmin(id) {
+      try {
+        await supabaseRequest(`packs?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+        packs = packs.filter(p => p.id !== id);
+        renderAdminPacks();
+        renderPacks();
+      } catch (error) {
+        console.error(error);
+        alert("Could not delete the pack online.");
+      }
     }
 
     // --- PENDING SUBMISSIONS REVIEW ---
@@ -955,7 +1085,7 @@
       });
     }
 
-    function approveSubmission(id) {
+    async function approveSubmission(id) {
       const sub = pendingSubmissions.find(s => s.id === id);
       if (!sub) return;
 
@@ -965,16 +1095,29 @@
         lvl.victors.push({ player: sub.player, video: sub.proof });
       }
 
-      pendingSubmissions = pendingSubmissions.filter(s => s.id !== id);
-      renderPendingSubmissions();
-      renderLevels();
-      renderLegacyLevels();
-      renderLeaderboard();
+      try {
+        await supabaseRequest(`levels?id=eq.${encodeURIComponent(lvl.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ victors: lvl.victors }) });
+        await supabaseRequest(`submissions?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+        pendingSubmissions = pendingSubmissions.filter(s => s.id !== id);
+        renderPendingSubmissions();
+        renderLevels();
+        renderLegacyLevels();
+        renderLeaderboard();
+      } catch (error) {
+        console.error(error);
+        alert("Could not approve the submission online.");
+      }
     }
 
-    function rejectSubmission(id) {
-      pendingSubmissions = pendingSubmissions.filter(s => s.id !== id);
-      renderPendingSubmissions();
+    async function rejectSubmission(id) {
+      try {
+        await supabaseRequest(`submissions?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+        pendingSubmissions = pendingSubmissions.filter(s => s.id !== id);
+        renderPendingSubmissions();
+      } catch (error) {
+        console.error(error);
+        alert("Could not reject the submission online.");
+      }
     }
   </script>
 </body>
