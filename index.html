@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Montana Demon List</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -99,9 +100,23 @@
           <span id="themeIcon" class="text-blue-400" aria-hidden="true"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.7 6.7 0 0 0 9.8 9.8Z"/></svg></span>
           <span id="themeIndicator">Dark</span>
         </button>
-        <button onclick="openAdminAuth()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition shadow">
-          <span id="adminButtonLabel">Admin</span>
-        </button>
+        <div id="accountLoggedOut" class="flex items-center gap-2">
+          <button onclick="openLoginModal()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded border border-cyber-border transition">Login</button>
+          <button onclick="openSignupModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition shadow">Create Account</button>
+        </div>
+        <div id="accountLoggedIn" class="hidden items-center gap-2">
+          <button id="adminPanelButton" onclick="openAdminPanel()" class="hidden px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition shadow">🛡️ Admin Panel</button>
+          <div class="relative">
+            <button onclick="toggleAccountMenu()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded border border-cyber-border transition flex items-center gap-2">
+              <span>👤</span><span id="accountUsername">Account</span><span>▾</span>
+            </button>
+            <div id="accountMenu" class="hidden absolute right-0 mt-2 w-44 bg-cyber-card border border-cyber-border rounded shadow-xl z-50 overflow-hidden">
+              <button onclick="openProfileModal()" class="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-800">Profile</button>
+              <button onclick="openMyRecords()" class="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-800">My Records</button>
+              <button onclick="logoutAccount()" class="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-800 text-red-400">Logout</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -188,9 +203,9 @@
           <h2 class="text-xl font-bold">Submit Completion Record</h2>
           <p class="text-xs text-gray-400">Record will be reviewed by administrators</p>
         </div>
-        <div>
-          <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Player Name</label>
-          <input id="subPlayer" type="text" placeholder="Your GD username" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+        <div class="p-3 bg-gray-900 rounded border border-cyber-border">
+          <p class="text-xs text-gray-400">Submitting as</p>
+          <p id="submitAccountName" class="font-semibold text-blue-400">Login required</p>
         </div>
         <div>
           <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Select Level</label>
@@ -270,20 +285,41 @@
     </div>
   </div>
 
-  <!-- ADMIN AUTH MODAL -->
-  <div id="adminAuthModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <!-- ACCOUNT AUTH MODALS -->
+  <div id="loginModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-cyber-card border border-cyber-border max-w-md w-full p-6 rounded shadow-xl space-y-4">
-      <div class="border-b border-cyber-border pb-2">
-        <h3 class="text-xl font-bold">Admin Authentication</h3>
-        <p class="text-xs text-gray-400">Enter administrator password to unlock management features</p>
+      <div class="flex justify-between items-center border-b border-cyber-border pb-3">
+        <div><h3 class="text-xl font-bold">Login</h3><p class="text-xs text-gray-400">Sign in to your Montana Demon List account</p></div>
+        <button onclick="closeAuthModals()" class="text-gray-400 hover:text-white font-bold">✕</button>
       </div>
-      <div>
-        <label class="block text-xs uppercase text-gray-400 mb-1">Password</label>
-        <input id="adminPassInput" type="password" placeholder="Enter admin password" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+      <input id="loginEmail" type="email" placeholder="Email" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+      <input id="loginPassword" type="password" placeholder="Password" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+      <button onclick="loginAccount()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded">Login</button>
+      <p class="text-xs text-center text-gray-400">Don't have an account? <button onclick="switchToSignup()" class="text-blue-400 hover:underline">Create one</button></p>
+    </div>
+  </div>
+
+  <div id="signupModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-cyber-card border border-cyber-border max-w-md w-full p-6 rounded shadow-xl space-y-4">
+      <div class="flex justify-between items-center border-b border-cyber-border pb-3">
+        <div><h3 class="text-xl font-bold">Create Account</h3><p class="text-xs text-gray-400">Create your Montana Demon List profile</p></div>
+        <button onclick="closeAuthModals()" class="text-gray-400 hover:text-white font-bold">✕</button>
       </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeAdminAuth()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-sm rounded">Cancel</button>
-        <button onclick="verifyAdminPass()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded">Login</button>
+      <input id="signupUsername" type="text" maxlength="24" placeholder="Username" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+      <input id="signupEmail" type="email" placeholder="Email" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+      <input id="signupPassword" type="password" minlength="6" placeholder="Password (6+ characters)" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+      <button onclick="signupAccount()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded">Create Account</button>
+      <p class="text-xs text-center text-gray-400">Already have an account? <button onclick="switchToLogin()" class="text-blue-400 hover:underline">Login</button></p>
+    </div>
+  </div>
+
+  <div id="profileModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-cyber-card border border-cyber-border max-w-md w-full p-6 rounded shadow-xl space-y-4">
+      <div class="flex justify-between items-center border-b border-cyber-border pb-3"><h3 class="text-xl font-bold">Profile</h3><button onclick="closeProfileModal()" class="text-gray-400 hover:text-white font-bold">✕</button></div>
+      <div class="p-4 bg-gray-900 rounded border border-cyber-border space-y-2">
+        <p><span class="text-gray-400">Username:</span> <strong id="profileUsername"></strong></p>
+        <p><span class="text-gray-400">Email:</span> <span id="profileEmail"></span></p>
+        <p><span class="text-gray-400">Member since:</span> <span id="profileCreated"></span></p>
       </div>
     </div>
   </div>
@@ -403,6 +439,10 @@
     // Public project URL + publishable key. Database writes are controlled by Supabase RLS policies.
     const SUPABASE_URL = "https://vdnuyhjtvwwbfijwexmf.supabase.co";
     const SUPABASE_KEY = "sb_publishable_0MfSfbq1aoT97r-aA_KuCQ_d48k6Aaw";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let currentSession = null;
+    let currentProfile = null;
+    let currentUserIsAdmin = false;
 
     async function supabaseRequest(table, options = {}) {
       const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
@@ -556,9 +596,115 @@
       renderPacks();
       populateSubmitOptions();
       resetAdminForm();
-      updateAdminButton();
       await loadRemoteData();
     };
+
+    // --- SUPABASE AUTH / ACCOUNTS ---
+    async function loadCurrentAccount(session) {
+      currentSession = session || null;
+      currentProfile = null;
+      currentUserIsAdmin = false;
+      const loggedOut = document.getElementById('accountLoggedOut');
+      const loggedIn = document.getElementById('accountLoggedIn');
+      const adminBtn = document.getElementById('adminPanelButton');
+      if (!session?.user) {
+        loggedOut.classList.remove('hidden');
+        loggedIn.classList.add('hidden');
+        loggedIn.classList.remove('flex');
+        adminBtn.classList.add('hidden');
+        document.getElementById('submitAccountName').textContent = 'Login required';
+        return;
+      }
+      loggedOut.classList.add('hidden');
+      loggedIn.classList.remove('hidden');
+      loggedIn.classList.add('flex');
+      try {
+        const profiles = await supabaseRequest(`profiles?id=eq.${encodeURIComponent(session.user.id)}&select=*`, { headers: { Prefer: 'return=representation' } });
+        currentProfile = profiles?.[0] || { username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'User' };
+      } catch (e) {
+        currentProfile = { username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'User' };
+      }
+      document.getElementById('accountUsername').textContent = currentProfile.username || 'Account';
+      document.getElementById('submitAccountName').textContent = currentProfile.username || session.user.email;
+      try {
+        const admins = await supabaseRequest(`admin_users?user_id=eq.${encodeURIComponent(session.user.id)}&select=user_id`, { headers: { Prefer: 'return=representation' } });
+        currentUserIsAdmin = Array.isArray(admins) && admins.length > 0;
+      } catch (e) {
+        currentUserIsAdmin = false;
+      }
+      adminBtn.classList.toggle('hidden', !currentUserIsAdmin);
+    }
+
+    async function initAuth() {
+      const { data } = await supabaseClient.auth.getSession();
+      await loadCurrentAccount(data.session);
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        setTimeout(() => loadCurrentAccount(session), 0);
+      });
+    }
+
+    function openLoginModal() {
+      closeAuthModals();
+      document.getElementById('loginModal').classList.remove('hidden');
+      document.getElementById('loginEmail').focus();
+    }
+    function openSignupModal() {
+      closeAuthModals();
+      document.getElementById('signupModal').classList.remove('hidden');
+      document.getElementById('signupUsername').focus();
+    }
+    function closeAuthModals() {
+      ['loginModal','signupModal'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    }
+    function switchToSignup() { openSignupModal(); }
+    function switchToLogin() { openLoginModal(); }
+
+    async function signupAccount() {
+      const username = document.getElementById('signupUsername').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      if (!username || !email || password.length < 6) { alert('Enter a username, valid email, and a password of at least 6 characters.'); return; }
+      const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { data: { username } } });
+      if (error) { alert(error.message); return; }
+      closeAuthModals();
+      if (data.session) alert('Account created and logged in!');
+      else alert('Account created. Check your email to confirm the account, then log in.');
+    }
+
+    async function loginAccount() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!email || !password) { alert('Enter your email and password.'); return; }
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) { alert(error.message); return; }
+      closeAuthModals();
+      document.getElementById('loginPassword').value = '';
+    }
+
+    async function logoutAccount() {
+      await supabaseClient.auth.signOut();
+      document.getElementById('accountMenu').classList.add('hidden');
+      alert('You have been logged out.');
+    }
+
+    function toggleAccountMenu() {
+      document.getElementById('accountMenu').classList.toggle('hidden');
+    }
+    function openProfileModal() {
+      document.getElementById('accountMenu').classList.add('hidden');
+      if (!currentSession?.user) return openLoginModal();
+      document.getElementById('profileUsername').textContent = currentProfile?.username || 'User';
+      document.getElementById('profileEmail').textContent = currentSession.user.email || '';
+      document.getElementById('profileCreated').textContent = new Date(currentSession.user.created_at).toLocaleDateString();
+      document.getElementById('profileModal').classList.remove('hidden');
+    }
+    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
+    function openMyRecords() {
+      document.getElementById('accountMenu').classList.add('hidden');
+      if (!currentSession?.user) return openLoginModal();
+      switchTab('submit');
+      alert('Your submitted records can be linked to your account in the submissions table.');
+    }
 
     // --- UI NAVIGATION & THEMES ---
     function switchTab(tab) {
@@ -766,7 +912,8 @@
     }
 
     async function submitRecord() {
-      const player = document.getElementById('subPlayer').value.trim();
+      if (!currentSession?.user) { alert('Please log in before submitting a record.'); openLoginModal(); return; }
+      const player = currentProfile?.username || currentSession.user.email || 'User';
       const levelId = parseInt(document.getElementById('subLevel').value);
       const proof = document.getElementById('subProof').value.trim();
       const fps = document.getElementById('subFps').value;
@@ -788,7 +935,7 @@
         await supabaseRequest("submissions", {
           method: "POST",
           headers: { Prefer: "return=minimal" },
-          body: JSON.stringify({ id: submission.id, player, level_id: levelId, proof, fps: String(fps || ""), mod_menu: modMenu, mod_notes: modNotes })
+          body: JSON.stringify({ id: submission.id, player, user_id: currentSession.user.id, level_id: levelId, proof, fps: String(fps || ""), mod_menu: modMenu, mod_notes: modNotes })
         });
         pendingSubmissions.push(submission);
       } catch (error) {
@@ -798,7 +945,6 @@
       }
 
       alert("Record submitted for admin review!");
-      document.getElementById('subPlayer').value = "";
       document.getElementById('subProof').value = "";
       document.getElementById('subModMenu').value = "None";
       document.getElementById('subModMenuOther').value = "";
@@ -806,49 +952,22 @@
     }
 
     // --- ADMIN PANEL CONTROLS ---
-    function isAdminLoggedIn() {
-      return localStorage.getItem('mdlAdminLoggedIn') === 'true';
-    }
-
-    function updateAdminButton() {
-      const label = document.getElementById('adminButtonLabel');
-      if (label) label.innerText = isAdminLoggedIn() ? 'Admin Panel' : 'Admin';
-    }
-
     function openAdminAuth() {
-      if (isAdminLoggedIn()) {
-        openAdminPanel();
-        return;
-      }
-      document.getElementById('adminAuthModal').classList.remove('hidden');
-      document.getElementById('adminPassInput').focus();
+      if (currentUserIsAdmin) openAdminPanel();
+      else if (!currentSession?.user) openLoginModal();
+      else alert('This account does not have administrator access.');
     }
 
     function closeAdminAuth() {
-      document.getElementById('adminAuthModal').classList.add('hidden');
     }
 
-    function verifyAdminPass() {
-      const pass = document.getElementById('adminPassInput').value;
-      if (pass === 'MdlNS27926') {
-        localStorage.setItem('mdlAdminLoggedIn', 'true');
-        closeAdminAuth();
-        document.getElementById('adminPassInput').value = "";
-        updateAdminButton();
-        openAdminPanel();
-      } else {
-        alert("Incorrect Admin Password!");
-      }
-    }
-
-    function logoutAdmin() {
-      localStorage.removeItem('mdlAdminLoggedIn');
+    async function logoutAdmin() {
+      await logoutAccount();
       closeAdminPanel();
-      updateAdminButton();
-      alert("Admin logged out.");
     }
 
     function openAdminPanel() {
+      if (!currentUserIsAdmin) { alert('Administrator access required.'); return; }
       renderAdminLevels();
       renderAdminPacks();
       renderPendingSubmissions();
@@ -1157,6 +1276,8 @@
         alert("Could not reject the submission online.");
       }
     }
-  </script>
+  
+    document.addEventListener('DOMContentLoaded', () => { initAuth(); });
+</script>
 </body>
 </html>
