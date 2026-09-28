@@ -482,7 +482,7 @@
 
       // Clear the remote ranking first so rank changes (including crossing #100/#101)
       // cannot collide with the unique rank constraint. Then write the current full list.
-      await supabaseRequest("levels", { method: "DELETE" });
+      await supabaseRequest("levels?id=not.is.null", { method: "DELETE", headers: { Prefer: "return=minimal" } });
       if (rows.length) {
         await supabaseRequest("levels", {
           method: "POST",
