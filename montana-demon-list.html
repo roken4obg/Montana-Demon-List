@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Montana Demon List</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              bg: '#0f1115',
+              card: '#181b20',
+              border: '#2a2e37',
+              accent: '#2563eb'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    
+    html.light {
+      color-scheme: light;
+    }
+    
+    html.light body {
+      background-color: #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+
+    html.light .bg-cyber-bg {
+      background-color: #f8fafc !important;
+    }
+
+    html.light .bg-cyber-card {
+      background-color: #ffffff !important;
+    }
+
+    html.light .border-cyber-border {
+      border-color: #e2e8f0 !important;
+    }
+
+    html.light .text-gray-400 {
+      color: #64748b !important;
+    }
+
+    html.light .text-gray-300 {
+      color: #334155 !important;
+    }
+
+    html.light .bg-gray-800 {
+      background-color: #e2e8f0 !important;
+      color: #1e293b !important;
+    }
+
+    html.light .bg-gray-900 {
+      background-color: #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+
+    html.light .hover\:bg-gray-800:hover {
+      background-color: #cbd5e1 !important;
+    }
+  </style>
+</head>
+<body class="bg-cyber-bg text-gray-100 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- HEADER / NAVBAR -->
+  <header class="bg-cyber-card border-b border-cyber-border sticky top-0 z-40 px-4 py-3 shadow-md">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div id="logoContainer" class="w-10 h-10 rounded bg-gray-800 border border-cyber-border flex items-center justify-center overflow-hidden">
+          <img id="siteLogo" src="https://placehold.co/100x100/181b20/ffffff?text=MDL" alt="MDL Logo" class="w-full h-full object-cover">
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight uppercase">Montana Demon List</h1>
+          <p class="text-xs text-gray-400">Official Ranking & Verification Hub</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <button onclick="toggleGuidelines()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded border border-cyber-border transition flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M15 3v5h5M9 13h6M9 17h6M9 9h2"/></svg>
+          <span>Guidelines</span>
+        </button>
+        <a href="https://discord.gg/5rAhUnnUvv" target="_blank" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded border border-cyber-border transition flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.54 5.03A16.9 16.9 0 0 0 15.42 3.7l-.5 1.02a15.4 15.4 0 0 0-5.84 0l-.5-1.02a16.9 16.9 0 0 0-4.12 1.33C1.84 8.8 1.14 12.5 1.49 16.15a16.8 16.8 0 0 0 5.05 2.57l1.22-1.67c-.67-.25-1.31-.55-1.91-.91l.47-.36c3.68 1.7 7.67 1.7 11.31 0l.47.36c-.6.36-1.24.66-1.91.91l1.22 1.67a16.8 16.8 0 0 0 5.05-2.57c.41-4.24-.7-7.9-2.92-11.12ZM8.69 14.36c-1.08 0-1.97-.98-1.97-2.19 0-1.2.87-2.19 1.97-2.19s1.98.98 1.97 2.19c0 1.21-.87 2.19-1.97 2.19Zm6.62 0c-1.08 0-1.97-.98-1.97-2.19 0-1.2.87-2.19 1.97-2.19s1.98.98 1.97 2.19c0 1.21-.87 2.19-1.97 2.19Z"/></svg>
+          <span>Discord</span>
+        </a>
+        <button onclick="toggleTheme()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded border border-cyber-border transition flex items-center gap-1.5">
+          <span id="themeIcon" class="text-blue-400" aria-hidden="true"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.7 6.7 0 0 0 9.8 9.8Z"/></svg></span>
+          <span id="themeIndicator">Dark</span>
+        </button>
+        <button onclick="openAdminAuth()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition shadow">
+          <span id="adminButtonLabel">Admin</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN NAVIGATION TABS -->
+  <div class="bg-cyber-card/90 border-b border-cyber-border backdrop-blur">
+    <div class="max-w-7xl mx-auto flex gap-2 p-2 text-sm font-medium overflow-x-auto">
+      <button onclick="switchTab('levels')" id="tab-levels" class="px-4 py-2 rounded bg-blue-600 text-white font-semibold transition">Main List</button>
+      <button onclick="switchTab('legacy')" id="tab-legacy" class="px-4 py-2 rounded hover:bg-gray-800 text-gray-400 transition">Legacy List</button>
+      <button onclick="switchTab('leaderboard')" id="tab-leaderboard" class="px-4 py-2 rounded hover:bg-gray-800 text-gray-400 transition">Leaderboard</button>
+      <button onclick="switchTab('packs')" id="tab-packs" class="px-4 py-2 rounded hover:bg-gray-800 text-gray-400 transition">Demon Packs</button>
+      <button onclick="switchTab('submit')" id="tab-submit" class="px-4 py-2 rounded hover:bg-gray-800 text-gray-400 transition">Submit Record</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto flex-1 p-4 w-full">
+
+    <!-- VIEW: LEVELS LIST -->
+    <div id="view-levels" class="space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-cyber-border">
+        <div>
+          <h2 class="text-2xl font-bold tracking-tight">Main List Demons</h2>
+          <p class="text-xs text-gray-400">Hardest Geometry Dash levels beat in Montana</p>
+        </div>
+      </div>
+      <div id="levelsListGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- JS Dynamic Content -->
+      </div>
+    </div>
+
+    <!-- VIEW: LEGACY LIST 100+ -->
+    <div id="view-legacy" class="hidden space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-cyber-border">
+        <div>
+          <h2 class="text-2xl font-bold tracking-tight">Legacy List</h2>
+          <p class="text-xs text-gray-400">Levels ranked outside the Top 100</p>
+        </div>
+      </div>
+      <div id="legacyListGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- JS Dynamic Content -->
+      </div>
+    </div>
+
+    <!-- VIEW: LEADERBOARD -->
+    <div id="view-leaderboard" class="hidden space-y-4">
+      <div class="pb-2 border-b border-cyber-border">
+        <h2 class="text-2xl font-bold tracking-tight">Player Standings</h2>
+        <p class="text-xs text-gray-400">Calculated with official decay point system</p>
+      </div>
+      <div class="bg-cyber-card rounded border border-cyber-border overflow-hidden shadow">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead class="bg-gray-800 text-gray-400 uppercase text-xs font-semibold">
+            <tr>
+              <th class="p-3.5">Rank</th>
+              <th class="p-3.5">Player</th>
+              <th class="p-3.5">Points</th>
+              <th class="p-3.5">Completions</th>
+              <th class="p-3.5">Profile</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardTableBody" class="divide-y divide-cyber-border">
+            <!-- JS Dynamic Content -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIEW: DEMON PACKS -->
+    <div id="view-packs" class="hidden space-y-4">
+      <div class="pb-2 border-b border-cyber-border">
+        <h2 class="text-2xl font-bold tracking-tight">Demon Packs</h2>
+        <p class="text-xs text-gray-400">Complete all levels in a pack for extra points</p>
+      </div>
+      <div id="packsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- JS Dynamic Content -->
+      </div>
+    </div>
+
+    <!-- VIEW: SUBMIT RECORD -->
+    <div id="view-submit" class="hidden space-y-4 max-w-xl mx-auto py-4">
+      <div class="bg-cyber-card border border-cyber-border p-6 rounded shadow space-y-4">
+        <div class="border-b border-cyber-border pb-3">
+          <h2 class="text-xl font-bold">Submit Completion Record</h2>
+          <p class="text-xs text-gray-400">Record will be reviewed by administrators</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Player Name</label>
+          <input id="subPlayer" type="text" placeholder="Your GD username" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Select Level</label>
+          <select id="subLevel" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Video Proof Link</label>
+          <input id="subProof" type="text" placeholder="https://youtube.com/watch?v=..." class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">FPS Achieved</label>
+          <input id="subFps" type="number" value="240" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-gray-400 mb-1">Client / Mod Menu Used</label>
+          <select id="subModMenu" onchange="toggleModMenuOther(this.value)" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+            <option value="None">None</option>
+            <option value="Mega Hack v9">Mega Hack v9</option>
+            <option value="Mega Hack v8">Mega Hack v8</option>
+            <option value="Mega Hack v7">Mega Hack v7</option>
+            <option value="Mega Hack v6">Mega Hack v6</option>
+            <option value="QOLMod">QOLMod</option>
+            <option value="Eclipse">Eclipse</option>
+            <option value="iCreate">iCreate</option>
+            <option value="Prism Menu">Prism Menu</option>
+            <option value="GDHM">GDHM</option>
+            <option value="GDH">GDH</option>
+            <option value="Other">Other (specify in notes)</option>
+          </select>
+          <input id="subModMenuOther" type="text" placeholder="Mod notes / specify the mod menu..." class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm mt-2 hidden focus:outline-none focus:border-blue-500">
+        </div>
+        <button onclick="submitRecord()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded text-sm transition shadow">Submit Record for Review</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- GUIDELINES MODAL -->
+  <div id="guidelinesModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-cyber-card border border-cyber-border max-w-2xl w-full p-6 rounded shadow-xl space-y-4 max-h-[85vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-cyber-border pb-3">
+        <h3 class="text-xl font-bold flex items-center gap-2"><svg class="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M15 3v5h5M9 13h6M9 17h6M9 9h2"/></svg> Submission Guidelines</h3>
+        <button onclick="toggleGuidelines()" class="text-gray-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+      <div class="text-sm space-y-3 text-gray-300 leading-relaxed">
+        <div class="p-3 bg-gray-900 rounded border border-cyber-border">
+          <p class="font-semibold text-blue-400 mb-1">1. Video Evidence</p>
+          <p class="text-xs">All completions require unedited video footage starting from 0% to level complete, with visible endscreen stats.</p>
+        </div>
+        <div class="p-3 bg-gray-900 rounded border border-cyber-border">
+          <p class="font-semibold text-blue-400 mb-1">2. Audio Requirements</p>
+          <p class="text-xs">Audible clicks/taps or raw audio input are strictly required for Top 20 levels.</p>
+        </div>
+        <div class="p-3 bg-gray-900 rounded border border-cyber-border">
+          <p class="font-semibold text-blue-400 mb-1">3. Allowed Hacks & Modifications</p>
+          <p class="text-xs">Cosmetic hacks, Geode plugins, and FPS bypass (up to 360 FPS) are allowed. Speedhack, hitbox viewers, and automated bots are strictly forbidden.</p>
+        </div>
+        <div class="p-3 bg-gray-900 rounded border border-cyber-border">
+          <p class="font-semibold text-blue-400 mb-1">4. Allowed/Sometimes Allowed/Not Allowed Mods</p>
+          <p class="text-xs">You can view Allowed/Sometimes Allowed/Not Allowed mods from <a href="https://docs.google.com/spreadsheets/d/1evE4nXATxRAQWu2Ajs54E6cVUqHBoSid8I7JauJnOzg/edit?gid=1745390460#gid=1745390460" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline font-semibold">here ↗</a>.</p>
+        </div>
+      </div>
+      <div class="flex justify-end pt-2">
+        <button onclick="toggleGuidelines()" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAYER PROFILE MODAL -->
+  <div id="playerModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-cyber-card border border-cyber-border max-w-xl w-full p-6 rounded shadow-xl space-y-4 max-h-[85vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-cyber-border pb-3">
+        <h3 id="playerModalName" class="text-xl font-bold">Player Details</h3>
+        <button onclick="closePlayerModal()" class="text-gray-400 hover:text-white font-bold">✕</button>
+      </div>
+      <div id="playerModalContent" class="space-y-4 text-sm"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN AUTH MODAL -->
+  <div id="adminAuthModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-cyber-card border border-cyber-border max-w-md w-full p-6 rounded shadow-xl space-y-4">
+      <div class="border-b border-cyber-border pb-2">
+        <h3 class="text-xl font-bold">Admin Authentication</h3>
+        <p class="text-xs text-gray-400">Enter administrator password to unlock management features</p>
+      </div>
+      <div>
+        <label class="block text-xs uppercase text-gray-400 mb-1">Password</label>
+        <input id="adminPassInput" type="password" placeholder="Enter admin password" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeAdminAuth()" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-sm rounded">Cancel</button>
+        <button onclick="verifyAdminPass()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded">Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN CONTROL PANEL MODAL -->
+  <div id="adminPanelModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-cyber-card border border-cyber-border max-w-4xl w-full p-6 rounded shadow-xl space-y-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-cyber-border pb-3">
+        <div>
+          <h3 class="text-xl font-bold">Admin Control Center</h3>
+          <p class="text-xs text-gray-400">Manage site branding, level placements, and pending user records</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="logoutAdmin()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-semibold rounded border border-cyber-border">Logout</button>
+          <button onclick="closeAdminPanel()" class="text-gray-400 hover:text-white font-bold text-lg">✕</button>
+        </div>
+      </div>
+
+      <!-- LOGO CUSTOMIZER -->
+      <div class="border border-cyber-border p-4 rounded bg-gray-900/50 space-y-3">
+        <h4 class="font-bold text-xs uppercase text-blue-400 tracking-wider">Header Logo Customizer</h4>
+        <div class="flex gap-2 items-center flex-wrap">
+          <input id="logoUrlInput" type="text" placeholder="Image URL..." class="flex-1 min-w-[200px] bg-gray-900 border border-cyber-border p-2 rounded text-sm focus:outline-none">
+          <input id="logoFileInput" type="file" accept="image/*" class="text-xs text-gray-400">
+          <button onclick="applyLogoCustomization()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded">Save Logo</button>
+        </div>
+      </div>
+
+      <!-- ADD / EDIT LEVEL FORM -->
+      <div class="border border-cyber-border p-4 rounded bg-gray-900/50 space-y-3">
+        <h4 id="formLevelHeader" class="font-bold text-xs uppercase text-blue-400 tracking-wider">Add / Edit Level</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <input id="admLevelName" type="text" placeholder="Level Name" class="bg-gray-900 border border-cyber-border p-2 rounded focus:outline-none">
+          <input id="admRank" type="number" min="1" placeholder="Rank (1-100 main, 101+ legacy)" class="bg-gray-900 border border-cyber-border p-2 rounded focus:outline-none">
+          <input id="admCreator" type="text" placeholder="Creator" class="bg-gray-900 border border-cyber-border p-2 rounded focus:outline-none">
+          <input id="admSong" type="text" placeholder="Song Name / ID" class="bg-gray-900 border border-cyber-border p-2 rounded focus:outline-none">
+          <select id="admLength" class="bg-gray-900 border border-cyber-border p-2 rounded focus:outline-none">
+            <option value="Tiny">Tiny</option>
+            <option value="Short">Short</option>
+            <option value="Medium">Medium</option>
+            <option value="Long">Long</option>
+            <option value="XL">XL</option>
+          </select>
+          <input id="admVideo" type="text" placeholder="YouTube Video URL" class="bg-gray-900 border border-cyber-border p-2 rounded focus:outline-none">
+          <input id="admImg" type="text" placeholder="Level Thumbnail Image URL" class="bg-gray-900 border border-cyber-border p-2 rounded focus:outline-none">
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button onclick="saveLevelAdmin()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded">Save Level</button>
+          <button id="cancelEditBtn" onclick="resetAdminForm()" class="px-4 py-2 bg-gray-800 text-gray-300 text-xs rounded hidden">Cancel Edit</button>
+        </div>
+      </div>
+
+      <!-- LEVEL MANAGEMENT TABLE -->
+      <div class="space-y-2">
+        <h4 class="font-bold text-xs uppercase text-blue-400 tracking-wider">Manage Level Positions & Deletions</h4>
+        <div class="overflow-x-auto border border-cyber-border rounded">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-gray-800 text-xs text-gray-400 uppercase">
+              <tr>
+                <th class="p-2.5">Rank</th>
+                <th class="p-2.5">Name</th>
+                <th class="p-2.5">Creator</th>
+                <th class="p-2.5">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminLevelTable" class="divide-y divide-cyber-border">
+              <!-- JS Dynamic Content -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PACK MANAGEMENT -->
+      <div class="border border-cyber-border p-4 rounded bg-gray-900/50 space-y-3">
+        <h4 class="font-bold text-xs uppercase text-blue-400 tracking-wider">Pack Management</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <input id="admPackName" type="text" placeholder="Pack Name" class="bg-gray-900 border border-cyber-border p-2 rounded focus:outline-none">
+          <input id="admPackBonus" type="number" min="0" value="50" placeholder="Bonus Points" class="bg-gray-900 border border-cyber-border p-2 rounded focus:outline-none">
+        </div>
+        <div>
+          <p class="text-xs font-semibold uppercase text-gray-400 mb-2">Levels in this pack</p>
+          <div id="admPackLevelCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto p-2 bg-gray-950/60 border border-cyber-border rounded">
+            <!-- Level checkboxes generated by JS -->
+          </div>
+        </div>
+        <button onclick="createPackAdmin()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded">Create Pack</button>
+        <div id="adminPacksList" class="space-y-2"></div>
+      </div>
+
+      <!-- PENDING SUBMISSIONS LIST -->
+      <div class="space-y-2">
+        <h4 class="font-bold text-xs uppercase text-blue-400 tracking-wider">Pending Submissions</h4>
+        <div id="pendingSubmissionsList" class="space-y-2">
+          <!-- JS Dynamic Content -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // --- POINT TABLE (1 to 100 Decay Formula) ---
+    const POINT_TABLE = {
+      1: 350.00, 2: 331.71, 3: 313.42, 4: 291.70, 5: 271.78, 6: 253.53, 7: 236.80, 8: 221.47, 9: 207.42, 10: 194.54,
+      11: 182.73, 12: 171.91, 13: 161.99, 14: 152.89, 15: 144.56, 16: 136.92, 17: 129.92, 18: 123.50, 19: 117.62, 20: 112.23,
+      21: 110.81, 22: 109.39, 23: 107.99, 24: 106.61, 25: 105.24, 26: 103.88, 27: 102.54, 28: 101.21, 29: 99.89, 30: 98.58,
+      31: 97.29, 32: 96.01, 33: 94.75, 34: 93.49, 35: 92.25, 36: 89.95, 37: 87.73, 38: 85.58, 39: 83.51, 40: 81.51,
+      41: 79.58, 42: 77.72, 43: 75.92, 44: 74.19, 45: 72.52, 46: 70.90, 47: 69.34, 48: 67.83, 49: 66.38, 50: 64.98,
+      51: 63.62, 52: 62.31, 53: 61.05, 54: 59.83, 55: 58.66, 56: 57.60, 57: 56.47, 58: 55.37, 59: 54.30, 60: 53.26,
+      61: 52.25, 62: 51.26, 63: 50.30, 64: 49.37, 65: 48.46, 66: 47.57, 67: 46.71, 68: 45.87, 69: 45.06, 70: 44.26,
+      71: 43.49, 72: 42.74, 73: 42.01, 74: 41.30, 75: 40.60, 76: 39.93, 77: 39.27, 78: 38.63, 79: 38.01, 80: 37.41,
+      81: 36.82, 82: 36.24, 83: 35.69, 84: 35.14, 85: 34.61, 86: 34.10, 87: 33.60, 88: 33.11, 89: 32.64, 90: 32.18,
+      91: 31.73, 92: 31.29, 93: 30.87, 94: 30.45, 95: 30.05, 96: 29.66, 97: 29.28, 98: 28.91, 99: 28.55, 100: 28.19
+    };
+
+    // --- INITIAL STATE ---
+    let levels = [
+      { id: 1, name: "Acheron", creator: "Riot & More", song: "Thermodynamix", length: "XL", video: "https://youtube.com", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&q=80", victors: [{ player: "Trick", video: "https://youtube.com" }, { player: "Zoink", video: "https://youtube.com" }] },
+      { id: 2, name: "Avernus", creator: "Parnox", song: "Purgatory", length: "Long", video: "https://youtube.com", img: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&q=80", victors: [{ player: "Zoink", video: "https://youtube.com" }] },
+      { id: 3, name: "Silent Clubstep", creator: "Nailok", song: "Clubstep", length: "Medium", video: "https://youtube.com", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80", victors: [{ player: "Paqtez", video: "https://youtube.com" }] }
+    ];
+
+    let packs = [
+      { id: 1, name: "Top 3 Nightmare Pack", bonus: 50, levelIds: [1, 2, 3] }
+    ];
+
+    let pendingSubmissions = [
+      { id: 101, player: "Vortex", levelId: 1, proof: "https://youtube.com", fps: 360, modMenu: "Geode / Megahack" }
+    ];
+
+    let currentEditingLevelId = null;
+
+    // --- INITIALIZATION ---
+    window.onload = function() {
+      renderLevels();
+      renderLegacyLevels();
+      renderLeaderboard();
+      renderPacks();
+      populateSubmitOptions();
+      resetAdminForm();
+      updateAdminButton();
+    };
+
+    // --- UI NAVIGATION & THEMES ---
+    function switchTab(tab) {
+      ['levels', 'legacy', 'leaderboard', 'packs', 'submit'].forEach(t => {
+        document.getElementById('view-' + t).classList.add('hidden');
+        document.getElementById('tab-' + t).className = "px-4 py-2 rounded hover:bg-gray-800 text-gray-400 transition";
+      });
+      document.getElementById('view-' + tab).classList.remove('hidden');
+      document.getElementById('tab-' + tab).className = "px-4 py-2 rounded bg-blue-600 text-white font-semibold transition";
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        html.classList.add('light');
+        document.getElementById('themeIndicator').innerText = "Light";
+        document.getElementById('themeIcon').innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+      } else {
+        html.classList.remove('light');
+        html.classList.add('dark');
+        document.getElementById('themeIndicator').innerText = "Dark";
+        document.getElementById('themeIcon').innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.7 6.7 0 0 0 9.8 9.8Z"/></svg>';
+      }
+    }
+
+    function toggleGuidelines() {
+      document.getElementById('guidelinesModal').classList.toggle('hidden');
+    }
+
+    // --- RENDER LEVEL CARDS ---
+    function createLevelCard(lvl, rank) {
+      const pts = POINT_TABLE[rank];
+      const card = document.createElement('div');
+      card.className = "bg-cyber-card border border-cyber-border rounded overflow-hidden flex flex-col justify-between shadow";
+      card.innerHTML = `
+        <div>
+          <div class="relative h-40 bg-gray-900">
+            <img src="${lvl.img}" class="w-full h-full object-cover">
+            <div class="absolute top-2 left-2 bg-black/80 text-white font-bold px-2.5 py-1 text-xs rounded border border-cyber-border shadow">
+              #${rank}
+            </div>
+            ${pts !== undefined ? `<div class="absolute bottom-2 right-2 bg-black/80 text-blue-400 font-bold px-2.5 py-1 text-xs rounded border border-cyber-border shadow">${pts.toFixed(2)} pts</div>` : ''}
+          </div>
+          <div class="p-4 space-y-2">
+            <h3 class="text-lg font-bold tracking-tight">${lvl.name}</h3>
+            <p class="text-xs text-gray-400">By <span class="text-gray-200 font-semibold">${lvl.creator}</span></p>
+            <div class="flex gap-2 text-xs text-gray-400 pt-1 flex-wrap">
+              <span class="bg-gray-800 px-2.5 py-1 rounded border border-cyber-border"><span class="text-blue-400 font-bold">Song:</span> ${lvl.song}</span>
+              <span class="bg-gray-800 px-2.5 py-1 rounded border border-cyber-border"><span class="text-blue-400 font-bold">Length:</span> ${lvl.length}</span>
+            </div>
+          </div>
+        </div>
+        <div class="p-4 pt-2 border-t border-cyber-border/50 mt-2 flex justify-between items-center text-xs">
+          <span class="text-gray-400">Victors: <strong class="text-gray-200">${lvl.victors ? lvl.victors.length : 0}</strong></span>
+          <a href="${lvl.video}" target="_blank" class="text-blue-400 hover:underline font-medium">Watch Video ↗</a>
+        </div>
+      `;
+      return card;
+    }
+
+    // --- RENDER MAIN LIST (#1-#100) ---
+    function renderLevels() {
+      const grid = document.getElementById('levelsListGrid');
+      grid.innerHTML = "";
+      const mainLevels = levels.slice(0, 100);
+      mainLevels.forEach((lvl, index) => grid.appendChild(createLevelCard(lvl, index + 1)));
+    }
+
+    // --- RENDER LEGACY LIST (#101+) ---
+    function renderLegacyLevels() {
+      const grid = document.getElementById('legacyListGrid');
+      grid.innerHTML = "";
+      const legacyLevels = levels.slice(100);
+      if (legacyLevels.length === 0) {
+        grid.innerHTML = `<div class="col-span-full bg-cyber-card border border-cyber-border rounded p-6 text-center text-sm text-gray-400">No levels ranked outside the Top 100 yet.</div>`;
+        return;
+      }
+      legacyLevels.forEach((lvl, index) => grid.appendChild(createLevelCard(lvl, index + 101)));
+    }
+
+    // --- RENDER LEADERBOARD ---
+    function getLeaderboardData() {
+      const pMap = {};
+      levels.slice(0, 100).forEach((lvl, index) => {
+        const rank = index + 1;
+        const pts = POINT_TABLE[rank] || 0;
+        if (lvl.victors) {
+          lvl.victors.forEach(v => {
+            if (!pMap[v.player]) {
+              pMap[v.player] = { name: v.player, points: 0, completions: [] };
+            }
+            pMap[v.player].points += pts;
+            pMap[v.player].completions.push({ levelName: lvl.name, rank: rank, pts: pts, video: v.video });
+          });
+        }
+      });
+
+      return Object.values(pMap).sort((a, b) => b.points - a.points);
+    }
+
+    function renderLeaderboard() {
+      const tbody = document.getElementById('leaderboardTableBody');
+      tbody.innerHTML = "";
+      const data = getLeaderboardData();
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-xs text-gray-400">No victors recorded yet.</td></tr>`;
+        return;
+      }
+
+      data.forEach((p, index) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-gray-800/40 border-b border-cyber-border transition";
+        tr.innerHTML = `
+          <td class="p-3.5 font-bold text-gray-300">#${index + 1}</td>
+          <td class="p-3.5 font-semibold">${p.name}</td>
+          <td class="p-3.5 text-blue-400 font-bold">${p.points.toFixed(2)}</td>
+          <td class="p-3.5 text-gray-400">${p.completions.length}</td>
+          <td class="p-3.5">
+            <button onclick="openPlayerModal('${p.name}')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-xs rounded border border-cyber-border transition">View Profile</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openPlayerModal(playerName) {
+      const data = getLeaderboardData().find(p => p.name === playerName);
+      if (!data) return;
+
+      document.getElementById('playerModalName').innerText = `${data.name}'s Profile`;
+      const container = document.getElementById('playerModalContent');
+
+      let completionsHtml = data.completions.map(c => `
+        <div class="flex justify-between items-center bg-gray-900 p-2.5 rounded border border-cyber-border">
+          <div>
+            <span class="font-bold">#${c.rank} ${c.levelName}</span>
+            <span class="text-xs text-blue-400 ml-2">(${c.pts.toFixed(2)} pts)</span>
+          </div>
+          <a href="${c.video}" target="_blank" class="text-xs text-blue-400 hover:underline">Watch ↗</a>
+        </div>
+      `).join('');
+
+      container.innerHTML = `
+        <div class="p-3 bg-gray-900 rounded border border-cyber-border flex justify-between items-center">
+          <span class="text-xs text-gray-400 uppercase font-semibold">Total Points Score:</span>
+          <span class="text-lg font-bold text-blue-400">${data.points.toFixed(2)}</span>
+        </div>
+        <h4 class="font-bold text-xs uppercase text-gray-400 border-b border-cyber-border pb-1 pt-2">Completions (${data.completions.length})</h4>
+        <div class="space-y-2 max-h-60 overflow-y-auto">
+          ${completionsHtml}
+        </div>
+      `;
+
+      document.getElementById('playerModal').classList.remove('hidden');
+    }
+
+    function closePlayerModal() {
+      document.getElementById('playerModal').classList.add('hidden');
+    }
+
+    // --- RENDER PACKS ---
+    function renderPacks() {
+      const container = document.getElementById('packsContainer');
+      container.innerHTML = "";
+
+      packs.forEach(p => {
+        const packLevels = levels.filter(l => p.levelIds.includes(l.id));
+        const div = document.createElement('div');
+        div.className = "bg-cyber-card border border-cyber-border p-4 rounded shadow space-y-2";
+        div.innerHTML = `
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-base">${p.name}</h3>
+            <span class="text-xs bg-blue-600/20 text-blue-400 border border-blue-500/30 px-2.5 py-1 rounded font-bold">+${p.bonus} Bonus Pts</span>
+          </div>
+          <div class="text-xs text-gray-400">Required levels:</div>
+          <ul class="text-xs space-y-1 list-disc list-inside text-gray-300">
+            ${packLevels.map(l => `<li>${l.name}</li>`).join('')}
+          </ul>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // --- SUBMIT RECORD ---
+    function populateSubmitOptions() {
+      const select = document.getElementById('subLevel');
+      select.innerHTML = "";
+      levels.forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l.id;
+        opt.innerText = l.name;
+        select.appendChild(opt);
+      });
+    }
+
+    function toggleModMenuOther(val) {
+      const input = document.getElementById('subModMenuOther');
+      if (val === 'Other') {
+        input.classList.remove('hidden');
+      } else {
+        input.classList.add('hidden');
+      }
+    }
+
+    function submitRecord() {
+      const player = document.getElementById('subPlayer').value.trim();
+      const levelId = parseInt(document.getElementById('subLevel').value);
+      const proof = document.getElementById('subProof').value.trim();
+      const fps = document.getElementById('subFps').value;
+      const modMenu = document.getElementById('subModMenu').value;
+      const modNotes = document.getElementById('subModMenuOther').value.trim();
+
+      if (modMenu === 'Other' && !modNotes) {
+        alert("Please specify the mod menu in the notes field!");
+        return;
+      }
+
+      if (!player || !proof) {
+        alert("Please enter both player name and video proof link!");
+        return;
+      }
+
+      pendingSubmissions.push({
+        id: Date.now(),
+        player,
+        levelId,
+        proof,
+        fps,
+        modMenu,
+        modNotes
+      });
+
+      alert("Record submitted for admin review!");
+      document.getElementById('subPlayer').value = "";
+      document.getElementById('subProof').value = "";
+      document.getElementById('subModMenu').value = "None";
+      document.getElementById('subModMenuOther').value = "";
+      document.getElementById('subModMenuOther').classList.add('hidden');
+    }
+
+    // --- ADMIN PANEL CONTROLS ---
+    function isAdminLoggedIn() {
+      return localStorage.getItem('mdlAdminLoggedIn') === 'true';
+    }
+
+    function updateAdminButton() {
+      const label = document.getElementById('adminButtonLabel');
+      if (label) label.innerText = isAdminLoggedIn() ? 'Admin Panel' : 'Admin';
+    }
+
+    function openAdminAuth() {
+      if (isAdminLoggedIn()) {
+        openAdminPanel();
+        return;
+      }
+      document.getElementById('adminAuthModal').classList.remove('hidden');
+      document.getElementById('adminPassInput').focus();
+    }
+
+    function closeAdminAuth() {
+      document.getElementById('adminAuthModal').classList.add('hidden');
+    }
+
+    function verifyAdminPass() {
+      const pass = document.getElementById('adminPassInput').value;
+      if (pass === 'MdlNS27926') {
+        localStorage.setItem('mdlAdminLoggedIn', 'true');
+        closeAdminAuth();
+        document.getElementById('adminPassInput').value = "";
+        updateAdminButton();
+        openAdminPanel();
+      } else {
+        alert("Incorrect Admin Password!");
+      }
+    }
+
+    function logoutAdmin() {
+      localStorage.removeItem('mdlAdminLoggedIn');
+      closeAdminPanel();
+      updateAdminButton();
+      alert("Admin logged out.");
+    }
+
+    function openAdminPanel() {
+      renderAdminLevels();
+      renderAdminPacks();
+      renderPendingSubmissions();
+      document.getElementById('adminPanelModal').classList.remove('hidden');
+    }
+
+    function closeAdminPanel() {
+      document.getElementById('adminPanelModal').classList.add('hidden');
+    }
+
+    // --- LOGO CUSTOMIZER ---
+    function applyLogoCustomization() {
+      const urlInput = document.getElementById('logoUrlInput').value.trim();
+      const fileInput = document.getElementById('logoFileInput').files[0];
+
+      if (fileInput) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('siteLogo').src = e.target.result;
+        };
+        reader.readAsDataURL(fileInput);
+      } else if (urlInput) {
+        document.getElementById('siteLogo').src = urlInput;
+      }
+      alert("Logo updated successfully!");
+    }
+
+    // --- ADMIN LEVEL OPERATIONS ---
+    function renderAdminLevels() {
+      const tbody = document.getElementById('adminLevelTable');
+      tbody.innerHTML = "";
+
+      levels.forEach((l, index) => {
+        const tr = document.createElement('tr');
+        tr.className = "border-b border-cyber-border hover:bg-gray-800/40";
+        tr.innerHTML = `
+          <td class="p-2.5 font-bold text-gray-400">#${index + 1}</td>
+          <td class="p-2.5 font-medium">${l.name}</td>
+          <td class="p-2.5 text-gray-400">${l.creator}</td>
+          <td class="p-2.5 flex items-center gap-1.5">
+            <button onclick="moveLevelUp(${index})" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs">▲</button>
+            <button onclick="moveLevelDown(${index})" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs">▼</button>
+            <button onclick="editLevelAdmin(${l.id})" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium">Edit</button>
+            <button onclick="deleteLevelAdmin(${l.id})" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded text-xs border border-cyber-border transition">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function refreshAfterLevelChange() {
+      renderAdminLevels();
+      renderLevels();
+      renderLegacyLevels();
+      renderLeaderboard();
+      renderPacks();
+      populateSubmitOptions();
+    }
+
+    function moveLevelUp(index) {
+      if (index <= 0) return;
+      [levels[index - 1], levels[index]] = [levels[index], levels[index - 1]];
+      refreshAfterLevelChange();
+    }
+
+    function moveLevelDown(index) {
+      if (index >= levels.length - 1) return;
+      [levels[index], levels[index + 1]] = [levels[index + 1], levels[index]];
+      refreshAfterLevelChange();
+    }
+
+    function deleteLevelAdmin(id) {
+      levels = levels.filter(l => l.id !== id);
+      refreshAfterLevelChange();
+    }
+
+    function editLevelAdmin(id) {
+      const lvl = levels.find(l => l.id === id);
+      if (!lvl) return;
+      currentEditingLevelId = id;
+
+      document.getElementById('formLevelHeader').innerText = `Edit Level: ${lvl.name}`;
+      document.getElementById('cancelEditBtn').classList.remove('hidden');
+      document.getElementById('admLevelName').value = lvl.name;
+      document.getElementById('admRank').value = levels.indexOf(lvl) + 1;
+      document.getElementById('admCreator').value = lvl.creator;
+      document.getElementById('admSong').value = lvl.song || "";
+      document.getElementById('admLength').value = lvl.length || "Medium";
+      document.getElementById('admVideo').value = lvl.video || "";
+      document.getElementById('admImg').value = lvl.img || "";
+    }
+
+    function resetAdminForm() {
+      currentEditingLevelId = null;
+      document.getElementById('formLevelHeader').innerText = "Add / Edit Level";
+      document.getElementById('cancelEditBtn').classList.add('hidden');
+      document.getElementById('admLevelName').value = "";
+      document.getElementById('admRank').value = levels.length + 1;
+      document.getElementById('admCreator').value = "";
+      document.getElementById('admSong').value = "";
+      document.getElementById('admLength').value = "Medium";
+      document.getElementById('admVideo').value = "";
+      document.getElementById('admImg').value = "";
+    }
+
+    function saveLevelAdmin() {
+      const name = document.getElementById('admLevelName').value.trim();
+      const creator = document.getElementById('admCreator').value.trim();
+      const song = document.getElementById('admSong').value.trim();
+      const length = document.getElementById('admLength').value;
+      const video = document.getElementById('admVideo').value.trim();
+      const img = document.getElementById('admImg').value.trim() || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80";
+      let rank = parseInt(document.getElementById('admRank').value, 10);
+
+      if (!name || !creator) {
+        alert("Level Name and Creator are required!");
+        return;
+      }
+      if (!Number.isFinite(rank) || rank < 1) rank = levels.length + 1;
+
+      if (currentEditingLevelId) {
+        const lvl = levels.find(l => l.id === currentEditingLevelId);
+        if (!lvl) return;
+        lvl.name = name;
+        lvl.creator = creator;
+        lvl.song = song;
+        lvl.length = length;
+        lvl.video = video;
+        lvl.img = img;
+        levels = levels.filter(l => l.id !== currentEditingLevelId);
+        const targetIndex = Math.min(Math.max(rank - 1, 0), levels.length);
+        levels.splice(targetIndex, 0, lvl);
+      } else {
+        const newLvl = { id: Date.now(), name, creator, song, length, video, img, victors: [] };
+        const targetIndex = Math.min(Math.max(rank - 1, 0), levels.length);
+        levels.splice(targetIndex, 0, newLvl);
+      }
+
+      resetAdminForm();
+      refreshAfterLevelChange();
+    }
+
+    // --- ADMIN PACK MANAGEMENT ---
+    function renderPackLevelCheckboxes(selectedIds = []) {
+      const container = document.getElementById('admPackLevelCheckboxes');
+      if (!container) return;
+      container.innerHTML = "";
+      if (!levels.length) {
+        container.innerHTML = `<p class="text-xs text-gray-400 col-span-full">No levels available.</p>`;
+        return;
+      }
+      levels.forEach((lvl, index) => {
+        const rank = index + 1;
+        const label = document.createElement('label');
+        label.className = "flex items-center gap-2 p-2 rounded bg-gray-900 border border-cyber-border hover:border-blue-500 cursor-pointer";
+        label.innerHTML = `<input type="checkbox" class="adm-pack-level w-4 h-4 accent-blue-600" value="${lvl.id}" ${selectedIds.includes(lvl.id) ? 'checked' : ''}>
+          <span class="min-w-0 text-xs"><strong class="text-gray-300">#${rank}</strong> <span class="text-gray-200">${lvl.name}</span></span>`;
+        container.appendChild(label);
+      });
+    }
+
+    function renderAdminPacks() {
+      renderPackLevelCheckboxes();
+      const container = document.getElementById('adminPacksList');
+      if (!container) return;
+      container.innerHTML = "";
+      if (packs.length === 0) {
+        container.innerHTML = `<p class="text-xs text-gray-400">No packs created yet.</p>`;
+        return;
+      }
+      packs.forEach(p => {
+        const div = document.createElement('div');
+        div.className = "bg-gray-900 border border-cyber-border p-3 rounded flex justify-between items-center gap-3";
+        const names = (p.levelIds || []).map(id => { const lvl = levels.find(l => l.id === id); return lvl ? lvl.name : `#${id}`; });
+        div.innerHTML = `
+          <div class="min-w-0">
+            <p class="font-bold text-sm">${p.name}</p>
+            <p class="text-xs text-gray-400">+${p.bonus} bonus • ${names.length ? names.join(', ') : 'No levels'}</p>
+          </div>
+          <button onclick="deletePackAdmin(${p.id})" class="shrink-0 px-3 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded text-xs border border-cyber-border">Delete</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function createPackAdmin() {
+      const name = document.getElementById('admPackName').value.trim();
+      const bonus = parseFloat(document.getElementById('admPackBonus').value) || 0;
+      const levelIds = [...document.querySelectorAll('.adm-pack-level:checked')]
+        .map(input => parseInt(input.value, 10))
+        .filter(Number.isFinite);
+
+      if (!name) {
+        alert("Pack Name is required!");
+        return;
+      }
+      if (!levelIds.length) {
+        alert("Select at least one level for the pack!");
+        return;
+      }
+
+      packs.push({ id: Date.now(), name, bonus, levelIds });
+      document.getElementById('admPackName').value = "";
+      document.getElementById('admPackBonus').value = "50";
+      renderAdminPacks();
+      renderPacks();
+    }
+
+    function deletePackAdmin(id) {
+      packs = packs.filter(p => p.id !== id);
+      renderAdminPacks();
+      renderPacks();
+    }
+
+    // --- PENDING SUBMISSIONS REVIEW ---
+    function renderPendingSubmissions() {
+      const container = document.getElementById('pendingSubmissionsList');
+      container.innerHTML = "";
+
+      if (pendingSubmissions.length === 0) {
+        container.innerHTML = `<p class="text-xs text-gray-400 p-2">No pending submissions.</p>`;
+        return;
+      }
+
+      pendingSubmissions.forEach(s => {
+        const lvl = levels.find(l => l.id === s.levelId);
+        const div = document.createElement('div');
+        div.className = "bg-gray-900 border border-cyber-border p-3 rounded flex justify-between items-center text-xs";
+        div.innerHTML = `
+          <div>
+            <p><span class="font-bold text-gray-200">${s.player}</span> completed <span class="font-bold text-blue-400">${lvl ? lvl.name : 'Unknown'}</span></p>
+            <p class="text-gray-400">FPS: ${s.fps} | Client: ${s.modMenu}${s.modNotes ? ` | Notes: ${s.modNotes}` : ''}</p>
+            <a href="${s.proof}" target="_blank" class="text-blue-400 hover:underline">Watch Proof ↗</a>
+          </div>
+          <div class="flex gap-1.5">
+            <button onclick="approveSubmission(${s.id})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded">Approve</button>
+            <button onclick="rejectSubmission(${s.id})" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded border border-cyber-border">Reject</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function approveSubmission(id) {
+      const sub = pendingSubmissions.find(s => s.id === id);
+      if (!sub) return;
+
+      const lvl = levels.find(l => l.id === sub.levelId);
+      if (lvl) {
+        if (!lvl.victors) lvl.victors = [];
+        lvl.victors.push({ player: sub.player, video: sub.proof });
+      }
+
+      pendingSubmissions = pendingSubmissions.filter(s => s.id !== id);
+      renderPendingSubmissions();
+      renderLevels();
+      renderLegacyLevels();
+      renderLeaderboard();
+    }
+
+    function rejectSubmission(id) {
+      pendingSubmissions = pendingSubmissions.filter(s => s.id !== id);
+      renderPendingSubmissions();
+    }
+  </script>
+</body>
+</html>
