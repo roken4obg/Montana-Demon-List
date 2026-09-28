@@ -285,6 +285,21 @@
     </div>
   </div>
 
+
+  <!-- LEVEL VICTORS MODAL -->
+  <div id="victorsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-cyber-card border border-cyber-border max-w-xl w-full p-6 rounded shadow-xl space-y-4 max-h-[85vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-cyber-border pb-3">
+        <div>
+          <h3 id="victorsModalName" class="text-xl font-bold">Level Victors</h3>
+          <p id="victorsModalRank" class="text-xs text-gray-400 mt-1"></p>
+        </div>
+        <button onclick="closeVictorsModal()" class="text-gray-400 hover:text-white font-bold">✕</button>
+      </div>
+      <div id="victorsModalContent" class="space-y-2 text-sm"></div>
+    </div>
+  </div>
+
   <!-- ACCOUNT AUTH MODALS -->
   <div id="loginModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-cyber-card border border-cyber-border max-w-md w-full p-6 rounded shadow-xl space-y-4">
@@ -746,7 +761,7 @@
     }
 
     // --- RENDER LEVEL CARDS ---
-    function createLevelCard(lvl, rank) {
+    function createLevelCard(lvl, rank, showVictorsButton = false) {
       const pts = POINT_TABLE[rank];
       const card = document.createElement('div');
       card.className = "bg-cyber-card border border-cyber-border rounded overflow-hidden flex flex-col justify-between shadow";
@@ -768,9 +783,12 @@
             </div>
           </div>
         </div>
-        <div class="p-4 pt-2 border-t border-cyber-border/50 mt-2 flex justify-between items-center text-xs">
+        <div class="p-4 pt-2 border-t border-cyber-border/50 mt-2 flex justify-between items-center text-xs gap-2">
           <span class="text-gray-400">Victors: <strong class="text-gray-200">${lvl.victors ? lvl.victors.length : 0}</strong></span>
-          <a href="${lvl.video}" target="_blank" class="text-blue-400 hover:underline font-medium">Watch Video ↗</a>
+          <div class="flex items-center gap-2">
+            ${showVictorsButton ? `<button onclick="openVictorsModal(${lvl.id})" class="text-blue-400 hover:text-blue-300 hover:underline font-medium">View Victors</button>` : ''}
+            <a href="${lvl.video}" target="_blank" class="text-blue-400 hover:underline font-medium">Watch Video ↗</a>
+          </div>
         </div>
       `;
       return card;
@@ -781,7 +799,7 @@
       const grid = document.getElementById('levelsListGrid');
       grid.innerHTML = "";
       const mainLevels = levels.slice(0, 100);
-      mainLevels.forEach((lvl, index) => grid.appendChild(createLevelCard(lvl, index + 1)));
+      mainLevels.forEach((lvl, index) => grid.appendChild(createLevelCard(lvl, index + 1, true)));
     }
 
     // --- RENDER LEGACY LIST (#101+) ---
@@ -794,6 +812,34 @@
         return;
       }
       legacyLevels.forEach((lvl, index) => grid.appendChild(createLevelCard(lvl, index + 101)));
+    }
+
+
+    function openVictorsModal(levelId) {
+      const lvl = levels.find(l => Number(l.id) === Number(levelId));
+      if (!lvl) return;
+      const rank = levels.findIndex(l => Number(l.id) === Number(levelId)) + 1;
+      const victors = Array.isArray(lvl.victors) ? lvl.victors : [];
+      document.getElementById('victorsModalName').innerText = `${lvl.name} — Victors`;
+      document.getElementById('victorsModalRank').innerText = `#${rank} • ${victors.length} completion${victors.length === 1 ? '' : 's'}`;
+      const container = document.getElementById('victorsModalContent');
+      if (!victors.length) {
+        container.innerHTML = `<div class="p-5 bg-gray-900 rounded border border-cyber-border text-center text-sm text-gray-400">No victors recorded yet.</div>`;
+      } else {
+        container.innerHTML = victors.map((v, index) => `
+          <div class="flex items-center justify-between gap-3 bg-gray-900 p-3 rounded border border-cyber-border">
+            <div class="min-w-0">
+              <div class="font-semibold text-gray-100"><span class="text-blue-400 mr-1">#${index + 1}</span>${v.player || 'Unknown Player'}</div>
+              <div class="text-xs text-gray-500 mt-0.5">Verified completion</div>
+            </div>
+            ${v.video ? `<a href="${v.video}" target="_blank" rel="noopener noreferrer" class="shrink-0 px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs rounded border border-cyber-border text-blue-400">Watch ↗</a>` : ''}
+          </div>`).join('');
+      }
+      document.getElementById('victorsModal').classList.remove('hidden');
+    }
+
+    function closeVictorsModal() {
+      document.getElementById('victorsModal').classList.add('hidden');
     }
 
     // --- RENDER LEADERBOARD ---
