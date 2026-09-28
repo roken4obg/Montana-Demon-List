@@ -1,4 +1,4 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -424,10 +424,11 @@
 
     async function loadRemoteData() {
       try {
-        const [remoteLevels, remotePacks, remoteSubmissions] = await Promise.all([
+        const [remoteLevels, remotePacks, remoteSubmissions, remoteSettings] = await Promise.all([
           supabaseRequest("levels", { headers: { Prefer: "return=representation" } }),
           supabaseRequest("packs", { headers: { Prefer: "return=representation" } }),
-          supabaseRequest("submissions", { headers: { Prefer: "return=representation" } })
+          supabaseRequest("submissions", { headers: { Prefer: "return=representation" } }),
+          supabaseRequest("settings", { headers: { Prefer: "return=representation" } })
         ]);
 
         if (Array.isArray(remoteLevels) && remoteLevels.length) {
@@ -455,6 +456,16 @@
           await saveAllSubmissions();
         }
 
+        if (Array.isArray(remoteSettings) && remoteSettings.length) {
+          const logoSetting = remoteSettings.find(row => row.key === "site_logo");
+          if (logoSetting && logoSetting.value) {
+            applyLogoToPage(logoSetting.value);
+          }
+        } else {
+          const currentLogo = document.getElementById('siteLogo')?.src || "";
+          if (currentLogo) await saveSetting("site_logo", currentLogo);
+        }
+
         refreshAllPublicViews();
       } catch (error) {
         console.error("Supabase load failed:", error);
@@ -468,15 +479,30 @@
         length: lvl.length || "Medium", video: lvl.video || "", img: lvl.img || "",
         victors: lvl.victors || []
       }));
-      await supabaseRequest("levels", {
+
+      // Clear the remote ranking first so rank changes (including crossing #100/#101)
+      // cannot collide with the unique rank constraint. Then write the current full list.
+      await supabaseRequest("levels", { method: "DELETE" });
+      if (rows.length) {
+        await supabaseRequest("levels", {
+          method: "POST",
+          headers: { Prefer: "return=minimal" },
+          body: JSON.stringify(rows)
+        });
+      }
+    }
+
+    async function saveSetting(key, value) {
+      await supabaseRequest("settings", {
         method: "POST",
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify(rows)
+        body: JSON.stringify({ key, value })
       });
-      const validIds = rows.map(r => r.id);
-      if (validIds.length) {
-        await supabaseRequest(`levels?id=not.in.(${validIds.join(",")})`, { method: "DELETE" });
-      }
+    }
+
+    function applyLogoToPage(value) {
+      const logo = document.getElementById('siteLogo');
+      if (logo && value) logo.src = value;
     }
 
     async function saveAllPacks() {
@@ -834,20 +860,32 @@
     }
 
     // --- LOGO CUSTOMIZER ---
-    function applyLogoCustomization() {
+    async function applyLogoCustomization() {
       const urlInput = document.getElementById('logoUrlInput').value.trim();
       const fileInput = document.getElementById('logoFileInput').files[0];
 
-      if (fileInput) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('siteLogo').src = e.target.result;
-        };
-        reader.readAsDataURL(fileInput);
-      } else if (urlInput) {
-        document.getElementById('siteLogo').src = urlInput;
+      try {
+        if (fileInput) {
+          const reader = new FileReader();
+          reader.onload = async function(e) {
+            const value = e.target.result;
+            applyLogoToPage(value);
+            await saveSetting("site_logo", value);
+            alert("Logo updated and saved online!");
+          };
+          reader.onerror = () => alert("Could not read the logo file.");
+          reader.readAsDataURL(fileInput);
+        } else if (urlInput) {
+          applyLogoToPage(urlInput);
+          await saveSetting("site_logo", urlInput);
+          alert("Logo updated and saved online!");
+        } else {
+          alert("Enter a logo URL or choose an image file first.");
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Logo changed locally, but could not be saved online.");
       }
-      alert("Logo updated successfully!");
     }
 
     // --- ADMIN LEVEL OPERATIONS ---
