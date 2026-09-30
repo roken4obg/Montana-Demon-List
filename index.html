@@ -458,6 +458,7 @@
     let currentSession = null;
     let currentProfile = null;
     let currentUserIsAdmin = false;
+    let profilesById = {};
 
     async function supabaseRequest(table, options = {}) {
       // Use the signed-in user's access token when available so Supabase RLS
@@ -482,12 +483,20 @@
 
     async function loadRemoteData() {
       try {
-        const [remoteLevels, remotePacks, remoteSubmissions, remoteSettings] = await Promise.all([
+        const [remoteLevels, remotePacks, remoteSubmissions, remoteSettings, remoteProfiles] = await Promise.all([
           supabaseRequest("levels", { headers: { Prefer: "return=representation" } }),
           supabaseRequest("packs", { headers: { Prefer: "return=representation" } }),
           supabaseRequest("submissions", { headers: { Prefer: "return=representation" } }),
-          supabaseRequest("settings", { headers: { Prefer: "return=representation" } })
+          supabaseRequest("settings", { headers: { Prefer: "return=representation" } }),
+          supabaseRequest("profiles", { headers: { Prefer: "return=representation" } })
         ]);
+
+        profilesById = {};
+        if (Array.isArray(remoteProfiles)) {
+          remoteProfiles.forEach(profile => {
+            if (profile.id) profilesById[String(profile.id)] = profile.username || "User";
+          });
+        }
 
         if (Array.isArray(remoteLevels) && remoteLevels.length) {
           levels = remoteLevels.sort((a, b) => a.rank - b.rank).map(row => ({
@@ -507,7 +516,7 @@
 
         if (Array.isArray(remoteSubmissions) && remoteSubmissions.length) {
           pendingSubmissions = remoteSubmissions.map(row => ({
-            id: row.id, player: row.player, levelId: row.level_id, proof: row.proof,
+            id: row.id, player: row.player, userId: row.user_id || null, levelId: row.level_id, proof: row.proof,
             fps: row.fps, modMenu: row.mod_menu || "None", modNotes: row.mod_notes || ""
           }));
         } else if (pendingSubmissions.length) {
@@ -527,6 +536,8 @@
         refreshAllPublicViews();
       } catch (error) {
         console.error("Supabase load failed:", error);
+        // Only render the local fallback after the remote load fails, never before it.
+        refreshAllPublicViews();
         alert("The online database could not be loaded. Check that the Supabase tables and policies were created.");
       }
     }
@@ -572,7 +583,7 @@
 
     async function saveAllSubmissions() {
       if (pendingSubmissions.length) {
-        const rows = pendingSubmissions.map(s => ({ id: s.id, player: s.player, level_id: s.levelId, proof: s.proof, fps: String(s.fps || ""), mod_menu: s.modMenu || "None", mod_notes: s.modNotes || "" }));
+        const rows = pendingSubmissions.map(s => ({ id: s.id, player: s.player, user_id: s.userId || null, level_id: s.levelId, proof: s.proof, fps: String(s.fps || ""), mod_menu: s.modMenu || "None", mod_notes: s.modNotes || "" }));
         await supabaseRequest("submissions", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(rows) });
       }
     }
@@ -600,21 +611,16 @@
       { id: 1, name: "Top 3 Nightmare Pack", bonus: 50, levelIds: [1, 2, 3] }
     ];
 
-    let pendingSubmissions = [
-      { id: 101, player: "Vortex", levelId: 1, proof: "https://youtube.com", fps: 360, modMenu: "Geode / Megahack" }
-    ];
+    let pendingSubmissions = [];
 
     let currentEditingLevelId = null;
 
     // --- INITIALIZATION ---
     window.onload = async function() {
-      renderLevels();
-      renderLegacyLevels();
-      renderLeaderboard();
-      renderPacks();
-      populateSubmitOptions();
-      resetAdminForm();
+      // Do not render the built-in example data on startup.
+      // Wait for Supabase first so users never see the example levels for a few frames.
       await loadRemoteData();
+      resetAdminForm();
     };
 
     // --- SUPABASE AUTH / ACCOUNTS ---
@@ -843,6 +849,13 @@
     }
 
     // --- RENDER LEADERBOARD ---
+    function getVictorDisplayName(v) {
+      if (v?.user_id && profilesById[String(v.user_id)]) {
+        return profilesById[String(v.user_id)];
+      }
+      return v?.player || "Unknown Player";
+    }
+
     function getLeaderboardData() {
       const pMap = {};
       levels.slice(0, 100).forEach((lvl, index) => {
@@ -850,11 +863,14 @@
         const pts = POINT_TABLE[rank] || 0;
         if (lvl.victors) {
           lvl.victors.forEach(v => {
-            if (!pMap[v.player]) {
-              pMap[v.player] = { name: v.player, points: 0, completions: [] };
+            const displayName = getVictorDisplayName(v);
+            const key = v?.user_id ? `user:${v.user_id}` : `name:${displayName}`;
+            if (!pMap[key]) {
+              pMap[key] = { name: displayName, userId: v?.user_id || null, points: 0, completions: [] };
             }
-            pMap[v.player].points += pts;
-            pMap[v.player].completions.push({ levelName: lvl.name, rank: rank, pts: pts, video: v.video });
+            pMap[key].name = displayName;
+            pMap[key].points += pts;
+            pMap[key].completions.push({ levelName: lvl.name, rank: rank, pts: pts, video: v.video });
           });
         }
       });
@@ -986,7 +1002,7 @@
         return;
       }
 
-      const submission = { id: Date.now(), player, levelId, proof, fps, modMenu, modNotes };
+      const submission = { id: Date.now(), player, userId: currentSession.user.id, levelId, proof, fps, modMenu, modNotes };
       try {
         await supabaseRequest("submissions", {
           method: "POST",
@@ -1305,7 +1321,7 @@
       const lvl = levels.find(l => l.id === sub.levelId);
       if (lvl) {
         if (!lvl.victors) lvl.victors = [];
-        lvl.victors.push({ player: sub.player, video: sub.proof });
+        lvl.victors.push({ player: sub.player, user_id: sub.userId || null, video: sub.proof });
       }
 
       try {
@@ -1336,4 +1352,5 @@
     document.addEventListener('DOMContentLoaded', () => { initAuth(); });
 </script>
 </body>
+</html>
 </html>
