@@ -424,6 +424,14 @@
         <div id="adminPacksList" class="space-y-2"></div>
       </div>
 
+      <!-- APPROVED RECORDS LIST -->
+      <div class="space-y-2">
+        <h4 class="font-bold text-xs uppercase text-blue-400 tracking-wider">Approved Player Records</h4>
+        <div id="approvedRecordsList" class="space-y-2">
+          <!-- JS Dynamic Content -->
+        </div>
+      </div>
+
       <!-- PENDING SUBMISSIONS LIST -->
       <div class="space-y-2">
         <h4 class="font-bold text-xs uppercase text-blue-400 tracking-wider">Pending Submissions</h4>
@@ -597,6 +605,7 @@
       renderAdminLevels();
       renderAdminPacks();
       renderPendingSubmissions();
+      renderApprovedRecords();
       resetAdminForm();
     }
 
@@ -835,10 +844,13 @@
         container.innerHTML = victors.map((v, index) => `
           <div class="flex items-center justify-between gap-3 bg-gray-900 p-3 rounded border border-cyber-border">
             <div class="min-w-0">
-              <div class="font-semibold text-gray-100"><span class="text-blue-400 mr-1">#${index + 1}</span>${v.player || 'Unknown Player'}</div>
+              <div class="font-semibold text-gray-100"><span class="text-blue-400 mr-1">#${index + 1}</span>${getVictorDisplayName(v)}</div>
               <div class="text-xs text-gray-500 mt-0.5">Verified completion</div>
             </div>
-            ${v.video ? `<a href="${v.video}" target="_blank" rel="noopener noreferrer" class="shrink-0 px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs rounded border border-cyber-border text-blue-400">Watch ↗</a>` : ''}
+            <div class="flex items-center gap-2 shrink-0">
+              ${v.video ? `<a href="${v.video}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs rounded border border-cyber-border text-blue-400">Watch ↗</a>` : ''}
+              ${currentUserIsAdmin ? `<button onclick="removeApprovedRecord(${lvl.id}, ${index})" class="px-2.5 py-1.5 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs rounded border border-red-500/30">Remove</button>` : ''}
+            </div>
           </div>`).join('');
       }
       document.getElementById('victorsModal').classList.remove('hidden');
@@ -991,35 +1003,66 @@
       const fps = document.getElementById('subFps').value;
       const modMenu = document.getElementById('subModMenu').value;
       const modNotes = document.getElementById('subModMenuOther').value.trim();
+      const userId = currentSession.user.id;
 
       if (modMenu === 'Other' && !modNotes) {
-        alert("Please specify the mod menu in the notes field!");
+        alert('Please specify the mod menu in the notes field!');
         return;
       }
 
       if (!player || !proof) {
-        alert("Please enter both player name and video proof link!");
+        alert('Please enter both player name and video proof link!');
         return;
       }
 
-      const submission = { id: Date.now(), player, userId: currentSession.user.id, levelId, proof, fps, modMenu, modNotes };
+      // Do not allow the same account to submit the same level more than once.
+      const alreadyPending = pendingSubmissions.some(s =>
+        String(s.userId || '') === String(userId) && Number(s.levelId) === Number(levelId)
+      );
+      const alreadyApproved = levels.some(l =>
+        Number(l.id) === Number(levelId) &&
+        Array.isArray(l.victors) &&
+        l.victors.some(v => String(v?.user_id || '') === String(userId))
+      );
+
+      if (alreadyPending || alreadyApproved) {
+        alert('You have already submitted a record for this level. You cannot submit the same level more than once.');
+        return;
+      }
+
+      // Extra online check so the page cannot miss a submission made from another device.
       try {
-        await supabaseRequest("submissions", {
-          method: "POST",
-          headers: { Prefer: "return=minimal" },
-          body: JSON.stringify({ id: submission.id, player, user_id: currentSession.user.id, level_id: levelId, proof, fps: String(fps || ""), mod_menu: modMenu, mod_notes: modNotes })
+        const existingOnline = await supabaseRequest(`submissions?user_id=eq.${encodeURIComponent(userId)}&level_id=eq.${encodeURIComponent(levelId)}&select=id`, {
+          headers: { Prefer: 'return=representation' }
+        });
+        if (Array.isArray(existingOnline) && existingOnline.length) {
+          alert('You already have a pending submission for this level.');
+          return;
+        }
+      } catch (error) {
+        console.error('Duplicate submission check failed:', error);
+        alert(`Could not verify whether you already submitted this level.\n\n${error?.message || 'Unknown Supabase error'}`);
+        return;
+      }
+
+      const submission = { id: Date.now(), player, userId, levelId, proof, fps, modMenu, modNotes };
+      try {
+        await supabaseRequest('submissions', {
+          method: 'POST',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({ id: submission.id, player, user_id: userId, level_id: levelId, proof, fps: String(fps || ''), mod_menu: modMenu, mod_notes: modNotes })
         });
         pendingSubmissions.push(submission);
       } catch (error) {
         console.error(error);
-        alert(`Could not save the submission online.\n\n${error?.message || "Unknown Supabase error"}\n\nMake sure the submissions table has a user_id column and the RLS policy allows logged-in users to insert their own records.`);
+        alert(`Could not save the submission online.\n\n${error?.message || 'Unknown Supabase error'}`);
         return;
       }
 
-      alert("Record submitted for admin review!");
-      document.getElementById('subProof').value = "";
-      document.getElementById('subModMenu').value = "None";
-      document.getElementById('subModMenuOther').value = "";
+      alert('Record submitted for admin review!');
+      document.getElementById('subProof').value = '';
+      document.getElementById('subModMenu').value = 'None';
+      document.getElementById('subModMenuOther').value = '';
       document.getElementById('subModMenuOther').classList.add('hidden');
     }
 
@@ -1043,6 +1086,7 @@
       renderAdminLevels();
       renderAdminPacks();
       renderPendingSubmissions();
+      renderApprovedRecords();
       document.getElementById('adminPanelModal').classList.remove('hidden');
     }
 
@@ -1285,6 +1329,72 @@
       }
     }
 
+    // --- APPROVED PLAYER RECORD MANAGEMENT ---
+    function renderApprovedRecords() {
+      const container = document.getElementById('approvedRecordsList');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const records = [];
+      levels.forEach((lvl, levelIndex) => {
+        (Array.isArray(lvl.victors) ? lvl.victors : []).forEach((v, victorIndex) => {
+          records.push({
+            levelId: lvl.id,
+            levelName: lvl.name,
+            levelRank: levelIndex + 1,
+            victorIndex,
+            name: getVictorDisplayName(v),
+            video: v.video || ''
+          });
+        });
+      });
+
+      if (!records.length) {
+        container.innerHTML = `<p class="text-xs text-gray-400 p-2">No approved player records.</p>`;
+        return;
+      }
+
+      records.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'bg-gray-900 border border-cyber-border p-3 rounded flex justify-between items-center text-xs gap-3';
+        div.innerHTML = `
+          <div class="min-w-0">
+            <p><span class="font-bold text-gray-200">${r.name}</span> completed <span class="font-bold text-blue-400">#${r.levelRank} ${r.levelName}</span></p>
+            ${r.video ? `<a href="${r.video}" target="_blank" class="text-blue-400 hover:underline">Watch Proof ↗</a>` : ''}
+          </div>
+          <button onclick="removeApprovedRecord(${r.levelId}, ${r.victorIndex})" class="shrink-0 px-3 py-1 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded border border-red-500/30">Remove</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function removeApprovedRecord(levelId, victorIndex) {
+      if (!currentUserIsAdmin) { alert('Administrator access required.'); return; }
+      const lvl = levels.find(l => Number(l.id) === Number(levelId));
+      if (!lvl || !Array.isArray(lvl.victors) || !lvl.victors[victorIndex]) return;
+      const victor = lvl.victors[victorIndex];
+      const name = getVictorDisplayName(victor);
+      if (!confirm(`Remove ${name}'s record from ${lvl.name}?`)) return;
+
+      const updatedVictors = lvl.victors.filter((_, i) => i !== victorIndex);
+      try {
+        await supabaseRequest(`levels?id=eq.${encodeURIComponent(lvl.id)}`, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({ victors: updatedVictors })
+        });
+        lvl.victors = updatedVictors;
+        renderApprovedRecords();
+        renderLevels();
+        renderLegacyLevels();
+        renderLeaderboard();
+        openVictorsModal(lvl.id);
+      } catch (error) {
+        console.error(error);
+        alert(`Could not remove the record online.\n\n${error?.message || 'Unknown Supabase error'}`);
+      }
+    }
+
     // --- PENDING SUBMISSIONS REVIEW ---
     function renderPendingSubmissions() {
       const container = document.getElementById('pendingSubmissionsList');
@@ -1352,5 +1462,4 @@
     document.addEventListener('DOMContentLoaded', () => { initAuth(); });
 </script>
 </body>
-</html>
 </html>
