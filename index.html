@@ -610,15 +610,10 @@
     }
 
     // --- INITIAL STATE ---
-    let levels = [
-      { id: 1, name: "Acheron", creator: "Riot & More", song: "Thermodynamix", length: "XL", video: "https://youtube.com", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&q=80", victors: [{ player: "Trick", video: "https://youtube.com" }, { player: "Zoink", video: "https://youtube.com" }] },
-      { id: 2, name: "Avernus", creator: "Parnox", song: "Purgatory", length: "Long", video: "https://youtube.com", img: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&q=80", victors: [{ player: "Zoink", video: "https://youtube.com" }] },
-      { id: 3, name: "Silent Clubstep", creator: "Nailok", song: "Clubstep", length: "Medium", video: "https://youtube.com", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=500&q=80", victors: [{ player: "Paqtez", video: "https://youtube.com" }] }
-    ];
+    // No built-in/demo data. All levels, packs, and submissions come from Supabase.
+    let levels = [];
 
-    let packs = [
-      { id: 1, name: "Top 3 Nightmare Pack", bonus: 50, levelIds: [1, 2, 3] }
-    ];
+    let packs = [];
 
     let pendingSubmissions = [];
 
