@@ -318,6 +318,8 @@
       <input id="loginEmail" type="email" placeholder="Email" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
       <input id="loginPassword" type="password" placeholder="Password" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
       <button onclick="loginAccount()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded">Login</button>
+      <div class="flex items-center gap-3 text-xs text-gray-500"><span class="h-px bg-gray-700 flex-1"></span>OR<span class="h-px bg-gray-700 flex-1"></span></div>
+      <button onclick="signInWithDiscord()" class="w-full py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold rounded flex items-center justify-center gap-2"><span>◉</span> Continue with Discord</button>
       <p class="text-xs text-center text-gray-400">Don't have an account? <button onclick="switchToSignup()" class="text-blue-400 hover:underline">Create one</button></p>
     </div>
   </div>
@@ -332,6 +334,8 @@
       <input id="signupEmail" type="email" placeholder="Email" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
       <input id="signupPassword" type="password" minlength="6" placeholder="Password (6+ characters)" class="w-full bg-gray-900 border border-cyber-border p-2.5 rounded text-sm focus:outline-none focus:border-blue-500">
       <button onclick="signupAccount()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded">Create Account</button>
+      <div class="flex items-center gap-3 text-xs text-gray-500"><span class="h-px bg-gray-700 flex-1"></span>OR<span class="h-px bg-gray-700 flex-1"></span></div>
+      <button onclick="signInWithDiscord()" class="w-full py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold rounded flex items-center justify-center gap-2"><span>◉</span> Sign up with Discord</button>
       <p class="text-xs text-center text-gray-400">Already have an account? <button onclick="switchToLogin()" class="text-blue-400 hover:underline">Login</button></p>
     </div>
   </div>
@@ -714,6 +718,17 @@
     function switchToSignup() { openSignupModal(); }
     function switchToLogin() { openLoginModal(); }
 
+    // Discord OAuth: first-time visitors are automatically registered as Supabase users;
+    // returning visitors are signed back into the same Discord-linked account.
+    async function signInWithDiscord() {
+      const redirectTo = `${window.location.origin}${window.location.pathname}`;
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'discord',
+        options: { scopes: 'identify', redirectTo }
+      });
+      if (error) alert(`Could not continue with Discord: ${error.message}`);
+    }
+
     async function signupAccount() {
       const username = document.getElementById('signupUsername').value.trim();
       const email = document.getElementById('signupEmail').value.trim();
@@ -787,7 +802,7 @@
       if (!avatarUrl && discordId && info.avatar) avatarUrl = `https://cdn.discordapp.com/avatars/${discordId}/${info.avatar}.png?size=128`;
       if (!discordId) return;
       const patch = { discord_id: discordId, discord_username: discordUsername, discord_avatar_url: avatarUrl || null };
-      const profileRow = { id: user.id, username: currentProfile?.username || user.user_metadata?.username || user.email?.split('@')[0] || 'User', ...patch };
+      const profileRow = { id: user.id, username: currentProfile?.username || user.user_metadata?.username || discordUsername || user.email?.split('@')[0] || 'User', ...patch };
       const { data, error } = await supabaseClient.from('profiles').upsert(profileRow, { onConflict: 'id' }).select('*').single();
       if (error) throw error;
       currentProfile = { ...(currentProfile || {}), ...(data || profileRow) };
