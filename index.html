@@ -62,6 +62,14 @@
       color: #1e293b !important;
     }
 
+    .level-card-gradient {
+      background: linear-gradient(135deg, #181b20 0%, #17243a 55%, #101827 100%);
+    }
+
+    html.light .level-card-gradient {
+      background: linear-gradient(135deg, #ffffff 0%, #edf3fc 55%, #dbeafe 100%);
+    }
+
     html.light .bg-gray-900 {
       background-color: #f1f5f9 !important;
       color: #0f172a !important;
@@ -108,7 +116,7 @@
           <button id="adminPanelButton" onclick="openAdminPanel()" class="hidden px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition shadow">🛡️ Admin Panel</button>
           <div class="relative">
             <button onclick="toggleAccountMenu()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded border border-cyber-border transition flex items-center gap-2">
-              <span>👤</span><span id="accountUsername">Account</span><span>▾</span>
+              <img id="accountAvatar" src="" alt="" class="hidden w-6 h-6 rounded-full object-cover border border-cyber-border"><span id="accountAvatarFallback">👤</span><span id="accountUsername">Account</span><span>▾</span>
             </button>
             <div id="accountMenu" class="hidden absolute right-0 mt-2 w-44 bg-cyber-card border border-cyber-border rounded shadow-xl z-50 overflow-hidden">
               <button onclick="openProfileModal()" class="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-800">Profile</button>
@@ -331,10 +339,19 @@
   <div id="profileModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-cyber-card border border-cyber-border max-w-md w-full p-6 rounded shadow-xl space-y-4">
       <div class="flex justify-between items-center border-b border-cyber-border pb-3"><h3 class="text-xl font-bold">Profile</h3><button onclick="closeProfileModal()" class="text-gray-400 hover:text-white font-bold">✕</button></div>
-      <div class="p-4 bg-gray-900 rounded border border-cyber-border space-y-2">
-        <p><span class="text-gray-400">Username:</span> <strong id="profileUsername"></strong></p>
-        <p><span class="text-gray-400">Email:</span> <span id="profileEmail"></span></p>
+      <div class="p-4 bg-gray-900 rounded border border-cyber-border space-y-3">
+        <div class="flex items-center gap-3">
+          <img id="profileDiscordAvatar" src="" alt="Discord avatar" class="hidden w-14 h-14 rounded-full object-cover border border-cyber-border">
+          <div id="profileDiscordAvatarFallback" class="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center text-2xl">👤</div>
+          <div class="min-w-0"><p id="profileUsername" class="font-semibold break-words"></p><p id="profileDiscordName" class="text-xs text-gray-400 break-words">Discord not connected</p></div>
+        </div>
+        <p><span class="text-gray-400">Email:</span> <span id="profileEmail" class="break-all"></span></p>
         <p><span class="text-gray-400">Member since:</span> <span id="profileCreated"></span></p>
+      </div>
+      <div class="space-y-2">
+        <button id="connectDiscordButton" onclick="connectDiscord()" class="w-full py-2.5 bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold rounded transition">Connect Discord</button>
+        <button id="disconnectDiscordButton" onclick="disconnectDiscord()" class="hidden w-full py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold rounded border border-cyber-border transition">Disconnect Discord</button>
+        <p class="text-xs text-gray-500">Connecting Discord shares your Discord username and avatar with Montana Demon List. It does not grant access to your messages.</p>
       </div>
     </div>
   </div>
@@ -502,7 +519,7 @@
         profilesById = {};
         if (Array.isArray(remoteProfiles)) {
           remoteProfiles.forEach(profile => {
-            if (profile.id) profilesById[String(profile.id)] = profile.username || "User";
+            if (profile.id) profilesById[String(profile.id)] = profile;
           });
         }
 
@@ -654,6 +671,9 @@
       }
       document.getElementById('accountUsername').textContent = currentProfile.username || 'Account';
       document.getElementById('submitAccountName').textContent = currentProfile.username || session.user.email;
+      updateAccountAvatar(currentProfile.discord_avatar_url);
+      // Refresh Discord identity data after returning from the OAuth consent screen.
+      await syncDiscordProfile(session.user).catch(err => console.warn('Discord profile sync:', err));
       try {
         // Query the admin role through the authenticated Supabase session.
         const { data: adminRows, error: adminError } = await supabaseClient
@@ -729,11 +749,78 @@
       document.getElementById('accountMenu').classList.add('hidden');
       if (!currentSession?.user) return openLoginModal();
       document.getElementById('profileUsername').textContent = currentProfile?.username || 'User';
-      document.getElementById('profileEmail').textContent = currentSession.user.email || '';
+      document.getElementById('profileEmail').textContent = currentSession.user.email || 'Not provided';
       document.getElementById('profileCreated').textContent = new Date(currentSession.user.created_at).toLocaleDateString();
+      const avatar = currentProfile?.discord_avatar_url || '';
+      const img = document.getElementById('profileDiscordAvatar');
+      img.classList.toggle('hidden', !avatar);
+      document.getElementById('profileDiscordAvatarFallback').classList.toggle('hidden', !!avatar);
+      if (avatar) img.src = avatar; else img.removeAttribute('src');
+      document.getElementById('profileDiscordName').textContent = currentProfile?.discord_username ? `Discord: ${currentProfile.discord_username}` : 'Discord not connected';
+      document.getElementById('connectDiscordButton').classList.toggle('hidden', !!currentProfile?.discord_id);
+      document.getElementById('disconnectDiscordButton').classList.toggle('hidden', !currentProfile?.discord_id);
       document.getElementById('profileModal').classList.remove('hidden');
     }
     function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
+
+    function updateAccountAvatar(url) {
+      const img = document.getElementById('accountAvatar');
+      const fallback = document.getElementById('accountAvatarFallback');
+      if (url) { img.src = url; img.classList.remove('hidden'); fallback.classList.add('hidden'); }
+      else { img.removeAttribute('src'); img.classList.add('hidden'); fallback.classList.remove('hidden'); }
+    }
+
+    function getDiscordIdentity(user) {
+      return (user?.identities || []).find(identity => identity.provider === 'discord') || null;
+    }
+
+    async function syncDiscordProfile(user) {
+      if (!user?.id) return;
+      const { data: freshUserData } = await supabaseClient.auth.getUser();
+      user = freshUserData?.user || user;
+      const identity = getDiscordIdentity(user);
+      if (!identity) return;
+      const info = identity.identity_data || {};
+      const discordId = String(info.provider_id || info.sub || identity.id || '');
+      const discordUsername = info.global_name || info.full_name || info.user_name || info.username || 'Discord user';
+      let avatarUrl = info.avatar_url || info.picture || '';
+      if (!avatarUrl && discordId && info.avatar) avatarUrl = `https://cdn.discordapp.com/avatars/${discordId}/${info.avatar}.png?size=128`;
+      if (!discordId) return;
+      const patch = { discord_id: discordId, discord_username: discordUsername, discord_avatar_url: avatarUrl || null };
+      const profileRow = { id: user.id, username: currentProfile?.username || user.user_metadata?.username || user.email?.split('@')[0] || 'User', ...patch };
+      const { data, error } = await supabaseClient.from('profiles').upsert(profileRow, { onConflict: 'id' }).select('*').single();
+      if (error) throw error;
+      currentProfile = { ...(currentProfile || {}), ...(data || profileRow) };
+      profilesById[String(user.id)] = currentProfile;
+      updateAccountAvatar(currentProfile.discord_avatar_url);
+      if (!document.getElementById('profileModal').classList.contains('hidden')) openProfileModal();
+      renderLeaderboard();
+    }
+
+    async function connectDiscord() {
+      if (!currentSession?.user) { alert('Please log in to your Montana Demon List account first.'); return openLoginModal(); }
+      const { error } = await supabaseClient.auth.linkIdentity({
+        provider: 'discord',
+        options: { scopes: 'identify', redirectTo: `${window.location.origin}${window.location.pathname}` }
+      });
+      if (error) alert(`Could not connect Discord: ${error.message}`);
+    }
+
+    async function disconnectDiscord() {
+      if (!currentSession?.user) return;
+      const identity = getDiscordIdentity(currentSession.user);
+      if (!identity) { alert('No Discord account is linked to this account.'); return; }
+      if (!confirm('Disconnect your Discord account from Montana Demon List?')) return;
+      const { error } = await supabaseClient.auth.unlinkIdentity(identity);
+      if (error) { alert(`Could not disconnect Discord: ${error.message}`); return; }
+      const { error: updateError } = await supabaseClient.from('profiles').update({ discord_id: null, discord_username: null, discord_avatar_url: null }).eq('id', currentSession.user.id);
+      if (updateError) { alert(`Discord was disconnected, but the profile could not be updated: ${updateError.message}`); }
+      currentProfile = { ...(currentProfile || {}), discord_id: null, discord_username: null, discord_avatar_url: null };
+      profilesById[String(currentSession.user.id)] = currentProfile;
+      updateAccountAvatar(null);
+      openProfileModal();
+      renderLeaderboard();
+    }
     function openMyRecords() {
       document.getElementById('accountMenu').classList.add('hidden');
       if (!currentSession?.user) return openLoginModal();
@@ -774,7 +861,7 @@
     function createLevelCard(lvl, rank, showVictorsButton = false) {
       const pts = POINT_TABLE[rank];
       const card = document.createElement('div');
-      card.className = "bg-cyber-card border border-cyber-border rounded overflow-hidden flex flex-col justify-between shadow";
+      card.className = "level-card-gradient border border-cyber-border rounded overflow-hidden flex flex-col justify-between shadow";
       card.innerHTML = `
         <div>
           <div class="relative h-40 bg-gray-900">
@@ -858,7 +945,7 @@
     // --- RENDER LEADERBOARD ---
     function getVictorDisplayName(v) {
       if (v?.user_id && profilesById[String(v.user_id)]) {
-        return profilesById[String(v.user_id)];
+        return profilesById[String(v.user_id)].username || v?.player || 'User';
       }
       return v?.player || "Unknown Player";
     }
@@ -876,6 +963,7 @@
               pMap[key] = { name: displayName, userId: v?.user_id || null, points: 0, completions: [] };
             }
             pMap[key].name = displayName;
+            pMap[key].avatarUrl = v?.user_id ? (profilesById[String(v.user_id)]?.discord_avatar_url || null) : null;
             pMap[key].points += pts;
             pMap[key].completions.push({ levelName: lvl.name, rank: rank, pts: pts, video: v.video });
           });
@@ -898,21 +986,24 @@
       data.forEach((p, index) => {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-gray-800/40 border-b border-cyber-border transition";
-        tr.innerHTML = `
-          <td class="p-3.5 font-bold text-gray-300">#${index + 1}</td>
-          <td class="p-3.5 font-semibold">${p.name}</td>
-          <td class="p-3.5 text-blue-400 font-bold">${p.points.toFixed(2)}</td>
-          <td class="p-3.5 text-gray-400">${p.completions.length}</td>
-          <td class="p-3.5">
-            <button onclick="openPlayerModal('${p.name}')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-xs rounded border border-cyber-border transition">View Profile</button>
-          </td>
-        `;
+        const rankCell = document.createElement('td');
+        rankCell.className = 'p-3.5 font-bold text-gray-300'; rankCell.textContent = `#${index + 1}`;
+        const playerCell = document.createElement('td'); playerCell.className = 'p-3.5 font-semibold';
+        const playerWrap = document.createElement('div'); playerWrap.className = 'flex items-center gap-2 min-w-0';
+        if (p.avatarUrl) { const avatar = document.createElement('img'); avatar.src = p.avatarUrl; avatar.alt = ''; avatar.loading = 'lazy'; avatar.className = 'w-7 h-7 rounded-full object-cover shrink-0'; playerWrap.appendChild(avatar); }
+        const playerName = document.createElement('span'); playerName.className = 'truncate'; playerName.textContent = p.name; playerWrap.appendChild(playerName); playerCell.appendChild(playerWrap);
+        const pointsCell = document.createElement('td'); pointsCell.className = 'p-3.5 text-blue-400 font-bold'; pointsCell.textContent = p.points.toFixed(2);
+        const completionsCell = document.createElement('td'); completionsCell.className = 'p-3.5 text-gray-400'; completionsCell.textContent = String(p.completions.length);
+        const profileCell = document.createElement('td'); profileCell.className = 'p-3.5';
+        const viewButton = document.createElement('button'); viewButton.className = 'px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-xs rounded border border-cyber-border transition'; viewButton.textContent = 'View Profile';
+        viewButton.addEventListener('click', () => openPlayerModal(p.userId || p.name, !!p.userId)); profileCell.appendChild(viewButton);
+        tr.append(rankCell, playerCell, pointsCell, completionsCell, profileCell);
         tbody.appendChild(tr);
       });
     }
 
-    function openPlayerModal(playerName) {
-      const data = getLeaderboardData().find(p => p.name === playerName);
+    function openPlayerModal(playerIdentifier, isUserId = false) {
+      const data = getLeaderboardData().find(p => isUserId ? String(p.userId) === String(playerIdentifier) : p.name === playerIdentifier);
       if (!data) return;
 
       document.getElementById('playerModalName').innerText = `${data.name}'s Profile`;
@@ -929,9 +1020,11 @@
       `).join('');
 
       container.innerHTML = `
-        <div class="p-3 bg-gray-900 rounded border border-cyber-border flex justify-between items-center">
-          <span class="text-xs text-gray-400 uppercase font-semibold">Total Points Score:</span>
-          <span class="text-lg font-bold text-blue-400">${data.points.toFixed(2)}</span>
+        <div class="p-3 bg-gray-900 rounded border border-cyber-border flex items-center gap-3">
+          ${data.avatarUrl ? `<img src="${data.avatarUrl}" alt="" class="w-12 h-12 rounded-full object-cover">` : ''}
+          <div class="min-w-0"><div class="font-semibold">${data.name}</div><span class="text-xs text-gray-400">${data.avatarUrl ? 'Discord linked' : 'Discord not linked'}</span></div>
+          <div class="ml-auto text-right"><span class="text-xs text-gray-400 uppercase font-semibold block">Total Points Score:</span>
+          <span class="text-lg font-bold text-blue-400">${data.points.toFixed(2)}</span></div>
         </div>
         <h4 class="font-bold text-xs uppercase text-gray-400 border-b border-cyber-border pb-1 pt-2">Completions (${data.completions.length})</h4>
         <div class="space-y-2 max-h-60 overflow-y-auto">
